@@ -1,3 +1,3 @@
 # In Arbeit
 
-- [ ] T-002 (M0) Offene Fragen in `docs/PLAN.md` klären und Plan freigeben
+- [ ] T-003 (M0) Swift Playground auf dem iPad und macOS-CI als Build-Weg prüfen

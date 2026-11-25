@@ -1,13 +1,17 @@
 # Strickapp
 
-Eine iOS-App, die beim Stricken begleitet.
+Eine iOS-App, die Strickanleitungen einliest und Schritt für Schritt durch das
+Projekt führt.
 
-> **Status:** Planung. Es gibt noch keinen App-Code.
+> **Status:** Plan freigegeben. Es gibt noch keinen App-Code.
 
 ## Ziel
 
-Der genaue Funktionsumfang wird gerade festgelegt. Vorschläge und offene Fragen
-stehen in [docs/PLAN.md](docs/PLAN.md).
+- Strickanleitung einlesen und daraus ein Projekt erstellen
+- Projekt Schritt für Schritt durchgehen
+- Mehrere Projekte, jedes mit eigenem gespeicherten Stand
+
+Details und offene Fragen: [docs/PLAN.md](docs/PLAN.md)
 
 ## Technik (Vorschlag)
 

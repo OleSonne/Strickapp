@@ -2,10 +2,10 @@
 
 Strickapp ist eine iOS-App zum Stricken. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: Planung
+## Aktuelle Phase: M0 abschließen
 
-Noch keinen App-Code schreiben, bis der Nutzer den Plan in `docs/PLAN.md`
-freigegeben hat. Danach diesen Abschnitt aktualisieren.
+Der Plan in `docs/PLAN.md` ist freigegeben. Vor dem App-Grundgerüst (M1) den
+Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
 
@@ -30,13 +30,15 @@ freigegeben hat. Danach diesen Abschnitt aktualisieren.
 
 ## Technik (Vorschlag, siehe docs/decisions/0001-technik.md)
 
-- Swift, SwiftUI, SwiftData, ab iOS 17.
+- Swift, SwiftUI, SwiftData, ab iOS/iPadOS 17.
+- Zuerst für das iPad (Hoch- und Querformat, Split View), Layout aber so bauen,
+  dass das iPhone später folgen kann.
 - Apple-Frameworks bevorzugen. Neue Abhängigkeiten nur nach Rückfrage.
 
 ## Architektur
 
 - Nach Funktion ordnen: `Strickapp/Features/<Name>/`.
-- Views zeigen an. Fachlogik (Zählen, Umrechnen) liegt in testbaren Typen
+- Views zeigen an. Fachlogik (Erkennung, Fortschritt) liegt in testbaren Typen
   ohne SwiftUI-Import.
 - `@Observable` für eigenen Zustand, `@Query` für einfache Listen. Ein ViewModel
   nur anlegen, wenn die View nennenswerte Logik hat.
@@ -46,7 +48,7 @@ freigegeben hat. Danach diesen Abschnitt aktualisieren.
 
 ## Code
 
-- Bezeichner auf Englisch, Oberfläche zuerst auf Deutsch.
+- Bezeichner auf Englisch, Oberfläche immer auf Deutsch.
 - Swift API Design Guidelines befolgen, Dateien und Views klein halten.
 - Kein Force-Unwrap (`!`) und kein `try!` im App-Code.
 - Nebenläufigkeit mit `async/await`, UI-Zustand auf dem `@MainActor`.
@@ -69,7 +71,20 @@ freigegeben hat. Danach diesen Abschnitt aktualisieren.
 - Daten bleiben lokal. Tracking, Konten oder Cloud nur nach Freigabe.
 - Keine Secrets ins Repo. Das GitHub-Repo ist öffentlich.
 - Änderungen am Datenmodell nach Veröffentlichung brauchen eine Migration.
-- Keine urheberrechtlich geschützten Strickanleitungen einbinden.
+- Keine urheberrechtlich geschützten Strickanleitungen ins Repo legen, auch nicht
+  als Testdaten. Beispiele selbst schreiben.
+
+## Anleitungen einlesen
+
+- Nie Schritte erfinden oder still weglassen. Unsicheres markieren.
+- Originalanleitung behalten und jederzeit anzeigen können.
+- Jeder erkannte Schritt ist vom Nutzer korrigierbar.
+- Erkennung und Fortschrittslogik ohne UI-Abhängigkeit schreiben, damit sie auch
+  unter Linux testbar sind.
+- Anleitungen nie an externe Dienste senden, Erkennung und Übersetzung laufen auf
+  dem Gerät.
+- Private Beispiele liegen in `beispiele/` (per .gitignore ausgeschlossen). Nie
+  committen und keine Textstellen daraus in Code, Tests oder Doku übernehmen.
 
 ## Tests
 
