@@ -123,6 +123,15 @@ dialog.wide .actions { position: sticky; bottom: -1.25rem; padding: .75rem 0; ba
 .chart-rows canvas { width: 100%; height: auto; background: #fff; border-radius: 8px; }
 .chart-rows .whole { max-height: 38dvh; width: auto; max-width: 100%; justify-self: start; }
 
+.grid-row { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .5rem; }
+.grid-row svg, .grid-whole { display: block; }
+.grid-row svg { width: 100%; height: auto; margin: auto; }
+.grid-whole { width: 100%; max-height: 45dvh; background: var(--surface); border-radius: 12px; }
+.grid-row text, .grid-whole text { fill: var(--text); font-variant-numeric: tabular-nums; }
+.grid-row text.other { fill: var(--muted); }
+.grid-row .frame, .grid-whole .frame { fill: none; stroke: #c2410c; }
+.grid-row .halo, .grid-whole .halo { fill: none; stroke: #fff; }
+
 .chart-rows ol.runs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; font-size: 1.2rem; font-weight: 600; }
 .runs li { display: flex; align-items: center; gap: .45rem; padding: .35rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 .swatch { flex: none; width: 1.2em; height: 1.2em; border: 2px solid #808080; border-radius: 5px; }

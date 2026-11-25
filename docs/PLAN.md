@@ -76,8 +76,8 @@ Schrift nur grafisch und braucht Texterkennung.
 3. Englisch: Strickbegriffe und typische Satzmuster über ein Glossar. Unübersetztes bleibt im Original und wird markiert.
 4. Nutzer prüft und korrigiert alles. Das ist fester Teil des Imports.
 
-Strickschriften: Der Nutzer markiert den Ausschnitt und gibt Reihen und Maschen an.
-Die App führt Reihe für Reihe hindurch und erkennt Farben der Kästchen. Symbole
+Strickschriften: Die App sucht das Gitter und zählt Reihen und Maschen. Der Nutzer prüft
+und korrigiert Ausschnitt und Zahlen. Die App führt Reihe für Reihe hindurch und erkennt Farben der Kästchen. Symbole
 werden als Bild gezeigt, nicht interpretiert.
 
 ## Meilensteine

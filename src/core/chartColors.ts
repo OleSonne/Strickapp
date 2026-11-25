@@ -48,6 +48,28 @@ export function readCells(p: Pixels, rows: number, stitches: number): { hex: str
   }
 }
 
+/** Anteil der Kästchen, die nicht einfarbig sind, z. B. wegen Symbolen. */
+export function mixedShare(p: Pixels, rows: number, stitches: number): number {
+  const w = p.width / stitches
+  const h = p.height / rows
+  let mixed = 0
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < stitches; col += 1) {
+      const middle = cellColor(p, row, col, rows, stitches)
+      let different = 0
+      for (let iy = 0; iy < 7; iy += 1) {
+        for (let ix = 0; ix < 7; ix += 1) {
+          const at = (Math.floor((row + 0.2 + iy * 0.1) * h) * p.width + Math.floor((col + 0.2 + ix * 0.1) * w)) * 4
+          const color: Rgb = [p.data[at] ?? 255, p.data[at + 1] ?? 255, p.data[at + 2] ?? 255]
+          if (distance(color, middle) >= SAME_COLOR) different += 1
+        }
+      }
+      if (different >= 4) mixed += 1
+    }
+  }
+  return mixed / (rows * stitches)
+}
+
 /** Mittlerer Wert der Kästchenmitte, damit Gitterlinien nicht stören. */
 function cellColor(p: Pixels, row: number, col: number, rows: number, stitches: number): Rgb {
   const w = p.width / stitches
@@ -72,6 +94,26 @@ const toHex = (c: Rgb) => `#${c.map((v) => Math.round(v).toString(16).padStart(2
 export interface Run {
   count: number
   color: ChartColor
+}
+
+/** Gleichfarbige Maschen von links nach rechts, mit Nummer der Farbe. */
+export function cellRuns(cells: number[]): { from: number; count: number; color: number }[] {
+  const runs: { from: number; count: number; color: number }[] = []
+  cells.forEach((color, from) => {
+    const last = runs.at(-1)
+    if (last?.color === color) last.count += 1
+    else runs.push({ from, count: 1, color })
+  })
+  return runs
+}
+
+/** Schwarz oder Weiß, je nachdem was auf der Farbe lesbar ist. */
+export function inkOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }) as Rgb
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.179 ? '#000000' : '#ffffff'
 }
 
 /** Gleichfarbige Maschen einer Reihe, in Strickrichtung. */

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
-import { readCells, type ChartColor } from '../core/chartColors'
+import { mixedShare, readCells, type ChartColor } from '../core/chartColors'
+import { findGrids, type Grid } from '../core/chartGrid'
 import type { Chart } from '../core/project'
 import { pageImage } from '../data/pageCache'
 import { Modal } from './Dialogs'
@@ -19,7 +20,46 @@ interface Props {
 }
 
 const FULL: Rect = { x: 0, y: 0, w: 1, h: 1 }
+const ZOOM_MARGIN = 0.08
+/** Ab so vielen Kästchen mit Symbolen sind Farben allein irreführend. */
+const MAX_MIXED = 0.05
 const clamp = (v: number) => Math.min(Math.max(v, 0), 1)
+
+const zoomTo = (rect: Rect): Rect => {
+  const x = clamp(rect.x - rect.w * ZOOM_MARGIN)
+  const y = clamp(rect.y - rect.h * ZOOM_MARGIN)
+  return {
+    x, y,
+    w: Math.min(1, rect.x + rect.w * (1 + ZOOM_MARGIN)) - x,
+    h: Math.min(1, rect.y + rect.h * (1 + ZOOM_MARGIN)) - y,
+  }
+}
+
+/** Bildpunkte eines Ausschnitts der Seite. */
+function pixels(page: HTMLCanvasElement, rect: Rect): { image: ImageData; x: number; y: number } {
+  const x = Math.min(page.width - 1, Math.floor(rect.x * page.width))
+  const y = Math.min(page.height - 1, Math.floor(rect.y * page.height))
+  const width = Math.max(1, Math.min(page.width - x, Math.round(rect.w * page.width)))
+  const height = Math.max(1, Math.min(page.height - y, Math.round(rect.h * page.height)))
+  return { image: page.getContext('2d')!.getImageData(x, y, width, height), x, y }
+}
+
+interface Found {
+  colors: ChartColor[]
+  cells: number[][]
+}
+
+function readColors(page: HTMLCanvasElement, rect: Rect, rows: number, stitches: number): { found: Found | null; mixed: boolean } {
+  const { image } = pixels(page, rect)
+  const result = readCells(image, rows, stitches)
+  return {
+    found: result && {
+      cells: result.cells,
+      colors: result.hex.map((hex, i) => ({ hex, name: `Farbe ${'ABCDEFGH'[i]}` })),
+    },
+    mixed: mixedShare(image, rows, stitches) > MAX_MIXED,
+  }
+}
 
 export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -31,7 +71,12 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
   const [rows, setRows] = useState('')
   const [stitches, setStitches] = useState('')
   const [inRounds, setInRounds] = useState(true)
-  const [found, setFound] = useState<{ colors: ChartColor[]; cells: number[][] } | null>(null)
+  const [found, setFound] = useState<Found | null>(null)
+  const [grids, setGrids] = useState<Grid[]>([])
+  const [choice, setChoice] = useState(0)
+  const [status, setStatus] = useState('')
+  /** Eigene Eingaben gehen vor: späte Ergebnisse der Suche werden verworfen. */
+  const search = useRef(0)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -58,6 +103,84 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
     }
   }, [projectId, current, view])
 
+  const use = (page: HTMLCanvasElement, all: Grid[], index: number) => {
+    const grid = all[index]!
+    const area = { x: grid.x / page.width, y: grid.y / page.height, w: grid.w / page.width, h: grid.h / page.height }
+    const { found: colors, mixed } = readColors(page, area, grid.rows, grid.stitches)
+    setGrids(all)
+    setChoice(index)
+    setRect(area)
+    setView(zoomTo(area))
+    setRows(String(grid.rows))
+    setStitches(String(grid.stitches))
+    setFound(mixed ? null : colors)
+    setStatus(`Gitter gefunden: ${grid.rows} Reihen, ${grid.stitches} Maschen. Prüfe, ob die roten Linien auf den Kästchen liegen.` +
+      (mixed || !colors ? ' Farben sind hier nicht eindeutig, vielleicht sind es Symbole.' : ''))
+  }
+
+  /** Sucht auf den Seiten nacheinander, bis ein Gitter gefunden ist. */
+  const find = async (pages: number[]) => {
+    const id = ++search.current
+    setError(null)
+    try {
+      for (const n of pages) {
+        setStatus(`Seite ${n} wird nach einem Gitter durchsucht …`)
+        const { canvas: page } = await pageImage(projectId, n)
+        if (search.current !== id) return
+        const all = findGrids(pixels(page, FULL).image)
+        if (all.length === 0) continue
+        setCurrent(n)
+        return use(page, all, 0)
+      }
+      setStatus('Kein Gitter gefunden. Ziehe einen Rahmen genau um die Kästchen, ohne die Zahlen am Rand.')
+    } catch (reason) {
+      if (search.current !== id) return
+      setStatus('')
+      setError(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
+
+  useEffect(() => {
+    void find([page])
+    return () => {
+      search.current += 1
+    }
+    // Nur beim Öffnen. Danach entscheidet der Nutzer.
+  }, [])
+
+  const findInFrame = async () => {
+    if (!rect) return
+    const id = ++search.current
+    try {
+      const { canvas: page } = await pageImage(projectId, current)
+      if (search.current !== id) return
+      const { image, x, y } = pixels(page, rect)
+      const all = findGrids(image).map((g) => ({ ...g, x: g.x + x, y: g.y + y }))
+      setError(null)
+      if (all.length > 0) use(page, all, 0)
+      else setStatus('Im Rahmen wurde kein Gitter gefunden. Gib Reihen und Maschen selbst an.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
+
+  const nextGrid = async () => {
+    const id = ++search.current
+    try {
+      const { canvas: page } = await pageImage(projectId, current)
+      if (search.current === id) use(page, grids, (choice + 1) % grids.length)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason))
+    }
+  }
+
+  /** Passt der Rahmen nicht mehr, gelten die erkannten Farben nicht mehr. */
+  const changed = () => {
+    search.current += 1
+    setFound(null)
+    setStatus('')
+  }
+
   const point = (event: PointerEvent<HTMLElement>) => {
     const box = event.currentTarget.getBoundingClientRect()
     return {
@@ -83,19 +206,13 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
     const a = fixed.current
     if (!a) return
     const b = point(event)
+    changed()
     setRect({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) })
   }
 
   const zoomIn = () => {
-    if (!rect || rect.w < 0.01 || rect.h < 0.01) return
-    const margin = 0.08
-    const x = clamp(rect.x - rect.w * margin)
-    const y = clamp(rect.y - rect.h * margin)
-    setView({ x, y, w: Math.min(1 - x, rect.w * (1 + 2 * margin)), h: Math.min(1 - y, rect.h * (1 + 2 * margin)) })
+    if (rect && rect.w >= 0.01 && rect.h >= 0.01) setView(zoomTo(rect))
   }
-
-  // Passt der Rahmen nicht mehr, gelten die erkannten Farben nicht mehr.
-  useEffect(() => setFound(null), [rect, rows, stitches])
 
   const recognize = async () => {
     const r = Number(rows)
@@ -105,21 +222,19 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
     }
     try {
       const { canvas: page } = await pageImage(projectId, current)
-      const x = Math.floor(rect.x * page.width)
-      const y = Math.floor(rect.y * page.height)
-      const width = Math.max(1, Math.min(page.width - x, Math.round(rect.w * page.width)))
-      const height = Math.max(1, Math.min(page.height - y, Math.round(rect.h * page.height)))
-      const image = page.getContext('2d')!.getImageData(x, y, width, height)
-      const result = readCells(image, r, s)
+      const { found: result, mixed } = readColors(page, rect, r, s)
       if (!result) return setError('Die Farben sind nicht eindeutig. Prüfe den Rahmen oder lege die Reihen ohne Farben an.')
       setError(null)
-      setFound({ cells: result.cells, colors: result.hex.map((hex, i) => ({ hex, name: `Farbe ${'ABCDEFGH'[i]}` })) })
+      setFound(result)
+      setStatus(mixed ? 'Einige Kästchen sind nicht einfarbig. Vergleiche die Farben genau oder verwirf sie.' : '')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason))
     }
   }
 
   const turn = (to: number) => {
+    changed()
+    setGrids([])
     setCurrent(to)
     setRect(null)
     setView(FULL)
@@ -132,7 +247,17 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
 
   return (
     <Modal title="Strickschrift einrichten" onClose={onClose} wide>
-      <p>Ziehe einen Rahmen genau um die Kästchen, ohne die Zahlen am Rand. Vergrößere dann und schiebe die Ecken zurecht.</p>
+      <p role="status">{status || 'Schiebe die Ecken zurecht oder ziehe einen neuen Rahmen um die Kästchen, ohne die Zahlen am Rand.'}</p>
+      <div className="actions">
+        <button onClick={() => void find([current])}>Gitter suchen</button>
+        <button disabled={!rect} onClick={() => void findInFrame()}>Nur im Rahmen suchen</button>
+        {total > 1 && (
+          <button onClick={() => void find(Array.from({ length: total - 1 }, (_, i) => ((current + i) % total) + 1))}>
+            Andere Seiten durchsuchen
+          </button>
+        )}
+        {grids.length > 1 && <button onClick={() => void nextGrid()}>Anderes Gitter ({choice + 1} von {grids.length})</button>}
+      </div>
       <div className="chart-area" data-testid="chart-area" onPointerDown={start} onPointerMove={move}
         onPointerUp={() => { fixed.current = null }} onPointerCancel={() => { fixed.current = null }}>
         <canvas ref={canvas} role="img" aria-label={`Seite ${current}`} />
@@ -152,8 +277,8 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
         )}
       </div>
       <div className="chart-fields">
-        <label>Reihen<input inputMode="numeric" value={rows} onChange={(e) => setRows(e.target.value)} /></label>
-        <label>Maschen<input inputMode="numeric" value={stitches} onChange={(e) => setStitches(e.target.value)} /></label>
+        <label>Reihen<input inputMode="numeric" value={rows} onChange={(e) => { changed(); setRows(e.target.value) }} /></label>
+        <label>Maschen<input inputMode="numeric" value={stitches} onChange={(e) => { changed(); setStitches(e.target.value) }} /></label>
         <label>
           Gestrickt wird
           <select value={inRounds ? 'rounds' : 'rows'} onChange={(e) => setInRounds(e.target.value === 'rounds')}>
@@ -165,6 +290,7 @@ export function ChartDialog({ projectId, page, onSave, onClose }: Props) {
       <p>Die roten Linien müssen auf den Kästchen liegen. Reihe 1 ist unten.</p>
       <div className="actions">
         <button disabled={!rect} onClick={() => void recognize()}>Farben erkennen</button>
+        {found && <button onClick={() => setFound(null)}>Farben verwerfen</button>}
       </div>
       {found && (
         <div className="found">
