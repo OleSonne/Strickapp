@@ -1,6 +1,6 @@
 # Plan
 
-**Status:** Freigegeben am 2026-11-25. Build-Weg (T-003) ist noch zu prüfen.
+**Status:** Freigegeben am 2026-11-25.
 
 ## Vom Nutzer festgelegt
 
@@ -37,8 +37,7 @@
 
 ## Offene Fragen
 
-1. Lässt sich in Swift Playground eine App anlegen und starten? Welche Version?
-2. Wie kommt der Code vom Repo aufs iPad?
+1. Wie kommt der Code vom Repo aufs iPad?
 
 ## Build-Weg ohne Mac (Vorschlag)
 

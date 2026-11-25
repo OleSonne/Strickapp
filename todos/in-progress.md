@@ -1,3 +1,3 @@
 # In Arbeit
 
-- [ ] T-003 (M0) Swift Playground auf dem iPad und macOS-CI als Build-Weg prüfen
+- [ ] T-005 (M1) Grundgerüst angelegt, Start auf dem iPad bestätigen

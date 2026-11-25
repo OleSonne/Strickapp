@@ -2,10 +2,10 @@
 
 Strickapp ist eine iOS-App zum Stricken. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: M0 abschließen
+## Aktuelle Phase: M1, Grundgerüst
 
-Der Plan in `docs/PLAN.md` ist freigegeben. Vor dem App-Grundgerüst (M1) den
-Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
+Grundgerüst in `Strickapp.swiftpm`. Offen: Start auf dem iPad und CI bestätigen.
+Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
 
@@ -26,9 +26,12 @@ Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 - Entwicklungsrechner ist Linux: Xcode, Simulator und SwiftUI gibt es hier nicht.
 - Nie behaupten, etwas sei gebaut oder getestet, wenn das nicht passiert ist.
   Ungeprüftes klar benennen.
-- Build- und Testbefehle hier eintragen, sobald Mac oder CI verfügbar ist.
+- Testbefehl für `Core` steht in der README. Die App selbst baut nur die CI (macOS)
+  oder das iPad.
+- Neue Dateien kommen automatisch ins App-Target. Nur ein Target, keine lokalen
+  Pakete, damit Swift Playground das Projekt öffnen kann.
 
-## Technik (Vorschlag, siehe docs/decisions/0001-technik.md)
+## Technik (siehe docs/decisions/0001-technik.md)
 
 - Swift, SwiftUI, SwiftData, ab iOS/iPadOS 17.
 - Zuerst für das iPad (Hoch- und Querformat, Split View), Layout aber so bauen,
@@ -37,9 +40,9 @@ Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Architektur
 
-- Nach Funktion ordnen: `Strickapp/Features/<Name>/`.
-- Views zeigen an. Fachlogik (Erkennung, Fortschritt) liegt in testbaren Typen
-  ohne SwiftUI-Import.
+- Nach Funktion ordnen: `Strickapp.swiftpm/Features/<Name>/`.
+- Views zeigen an. Fachlogik (Erkennung, Fortschritt) liegt in
+  `Strickapp.swiftpm/Core/`, nur mit Foundation, ohne Apple-UI-Frameworks.
 - `@Observable` für eigenen Zustand, `@Query` für einfache Listen. Ein ViewModel
   nur anlegen, wenn die View nennenswerte Logik hat.
 - Features hängen nicht voneinander ab. Gemeinsames kommt nach `Models`,
@@ -63,7 +66,8 @@ Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 - Alles Wesentliche funktioniert offline.
 - Dynamic Type, VoiceOver und Dark Mode unterstützen. Information nie nur über
   Farbe vermitteln.
-- Texte über den String Catalog, keine fest verdrahteten Zeichenketten.
+- Texte direkt auf Deutsch in den Views. Die App bleibt einsprachig, ein String
+  Catalog ist dafür nicht nötig.
 - Apple Human Interface Guidelines beachten.
 
 ## Daten und Datenschutz
@@ -90,7 +94,7 @@ Build-Weg prüfen (T-003). Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 - Fachlogik mit Unit-Tests absichern, auch Randfälle (Zähler bei 0, Rückgängig).
 - Fehler erst mit einem Test nachstellen, dann beheben.
-- UI-Tests nur für die wichtigsten Abläufe.
+- UI-Tests gibt es vorerst nicht, Abläufe auf dem iPad prüfen.
 
 ## Git
 

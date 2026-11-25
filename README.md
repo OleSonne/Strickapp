@@ -3,7 +3,7 @@
 Eine iOS-App, die Strickanleitungen einliest und Schritt für Schritt durch das
 Projekt führt.
 
-> **Status:** Plan freigegeben. Es gibt noch keinen App-Code.
+> **Status:** Grundgerüst.
 
 ## Ziel
 
@@ -13,7 +13,7 @@ Projekt führt.
 
 Details und offene Fragen: [docs/PLAN.md](docs/PLAN.md)
 
-## Technik (Vorschlag)
+## Technik
 
 | Bereich | Wahl |
 | --- | --- |
@@ -21,23 +21,19 @@ Details und offene Fragen: [docs/PLAN.md](docs/PLAN.md)
 | Oberfläche | SwiftUI |
 | Datenhaltung | SwiftData, lokal auf dem Gerät |
 | Mindestversion | iOS 17 |
-| Tests | Swift Testing, XCUITest |
+| Tests | Swift Testing |
 
 Begründung: [docs/decisions/0001-technik.md](docs/decisions/0001-technik.md)
 
 ## Projektstruktur
 
 ```text
-Strickapp/            App-Code
+Strickapp.swiftpm/    App für Swift Playground und Xcode
 ├── App/              Einstiegspunkt, Navigation
-├── Features/         Ein Ordner pro Funktion (View + Logik)
-├── Models/           Datenmodelle
-├── Services/         Speicherung, Benachrichtigungen usw.
-├── DesignSystem/     Farben, Schriften, wiederverwendbare Views
-├── Utilities/        Kleine Helfer und Extensions
-└── Resources/        Assets, Übersetzungen
-StrickappTests/       Unit-Tests
-StrickappUITests/     UI-Tests
+├── Core/             Fachlogik ohne SwiftUI, unter Linux testbar
+└── Features/         Ein Ordner pro Funktion
+Package.swift         Nur für Tests der Fachlogik
+Tests/                Unit-Tests
 docs/                 Plan und Entscheidungen
 todos/                Aufgaben
 CLAUDE.md             Arbeitsanweisungen für Claude
@@ -45,5 +41,12 @@ CLAUDE.md             Arbeitsanweisungen für Claude
 
 ## Entwicklung
 
-Zum Bauen und Ausführen wird ein Mac mit Xcode benötigt (oder macOS in der CI).
-Das Xcode-Projekt ist noch nicht angelegt, Anleitung folgt.
+- **iPad:** Repo als ZIP laden, entpacken, `Strickapp.swiftpm` in Swift Playground
+  öffnen.
+- **Tests unter Linux:**
+
+  ```sh
+  docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/src:ro \
+    -w /src swift:6.1 swift test --scratch-path /tmp/b
+  ```
+- **CI:** GitHub Actions testet die Fachlogik und baut die App auf macOS.
