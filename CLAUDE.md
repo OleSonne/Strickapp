@@ -2,9 +2,10 @@
 
 Strickapp ist eine Web-App (PWA) zum Stricken für iPad und iPhone. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: M4, Import
+## Aktuelle Phase: M4, Nachbesserung
 
-M3 ist veröffentlicht. M4 ist gebaut, Veröffentlichung und iPad-Test stehen aus.
+M4 ist veröffentlicht. Tipps am Schritt und Strickschriften (T-022 bis T-024) sind
+gebaut, Veröffentlichung und iPad-Test stehen aus. Danach folgt M5.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
@@ -70,6 +71,8 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 - Nie Schritte erfinden oder still weglassen. Unsicheres markieren.
 - Originalanleitung behalten und jederzeit anzeigen können.
+- Tipps und Kontrollen gehören zum passenden Schritt, nie als eigener Schritt.
+- Strickschriften werden Reihe für Reihe durchgegangen, mit erkannten Farben.
 - Jeder erkannte Schritt ist vom Nutzer korrigierbar.
 - Erkennung und Fortschrittslogik ohne UI-Abhängigkeit schreiben, damit sie
   direkt testbar sind.

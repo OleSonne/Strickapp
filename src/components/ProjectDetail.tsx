@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { rangeLabel, untilLabel } from '../core/labels'
 import {
-  advance, canMove, canUndo, deleteRepeat, deleteStep, isFinished, leaveRepeat, moveStep, needsDecision,
+  advance, canMove, canUndo, deleteChart, deleteRepeat, deleteStep, isFinished, leaveRepeat, moveStep, needsDecision,
   repeatAt, undo, type Project, type Repeat, type Step,
 } from '../core/project'
 import { OriginalDialog } from './OriginalDialog'
@@ -14,12 +14,13 @@ interface Props {
   onAddSteps: () => void
   onEditStep: (step: Step) => void
   onEditRepeat: (repeat?: Repeat) => void
+  onAddChart: (step: Step) => void
   onRename: () => void
   onDelete: () => void
   onBack: () => void
 }
 
-export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEditRepeat, onRename, onDelete, onBack }: Props) {
+export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEditRepeat, onAddChart, onRename, onDelete, onBack }: Props) {
   const [overview, setOverview] = useState(false)
   const [originalPage, setOriginalPage] = useState<number | null>(null)
   const [wantsEdit, setEditing] = useState(false)
@@ -58,7 +59,8 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
       </header>
 
       {steps.length === 0 && <p className="empty">Noch keine Schritte. Füge oben welche hinzu.</p>}
-      {!showList && <KnitView key={project.steps[completedCount]?.id ?? 'done'} project={project} onOriginal={setOriginalPage} />}
+      {!showList && <KnitView key={project.steps[completedCount]?.id ?? 'done'} project={project} onOriginal={setOriginalPage}
+        onChart={() => onAddChart(project.steps[completedCount]!)} />}
       {showList && <ol>
         {steps.map((step, index) => {
           const state = index < completedCount ? 'done' : index === completedCount ? 'current' : 'open'
@@ -94,6 +96,9 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
               <span className="text">
                 {state === 'done' && <span className="sr-only">Erledigt: </span>}
                 {step.text}
+                {step.tips?.map((tip, i) => (
+                  <small key={i} className="tip-line">{tip.after ? 'Nach der Wiederholung: ' : 'Tipp: '}{tip.text}</small>
+                ))}
               </span>
               {editing && (
                 <span className="actions">
@@ -102,6 +107,16 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
                   <button aria-label={`Schritt ${index + 1} nach unten`} disabled={!canMove(project, step.id, 1)}
                     onClick={() => onChange((p) => moveStep(p, step.id, 1))}>↓</button>
                   <button aria-label={`Schritt ${index + 1} ändern`} onClick={() => onEditStep(step)}>Ändern</button>
+                  {step.page !== undefined && !step.chart && (
+                    <button aria-label={`Strickschrift nach Schritt ${index + 1}`} onClick={() => onAddChart(step)}>
+                      Strickschrift
+                    </button>
+                  )}
+                  {step.chart?.row === 1 && (
+                    <button className="danger" onClick={() => onChange((p) => deleteChart(p, step.chart!.id))}>
+                      Strickschrift entfernen
+                    </button>
+                  )}
                   <button className="danger" aria-label={`Schritt ${index + 1} löschen`}
                     onClick={() => onChange((p) => deleteStep(p, step.id))}>Löschen</button>
                 </span>

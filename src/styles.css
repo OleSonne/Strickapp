@@ -111,6 +111,32 @@ dialog.wide .actions { position: sticky; bottom: -1.25rem; padding: .75rem 0; ba
 .small { font-size: .95rem; }
 .repeat small { flex-basis: 100%; font-weight: 400; }
 
+.tip-box { padding: .6rem .9rem; border-radius: 10px; border: 1px dashed var(--accent); }
+.tip-line { display: block; font-size: .95rem; font-weight: 400; }
+.draft.tip { border-style: dashed; margin-left: 2rem; }
+.import label.inline { display: flex; align-items: center; gap: .5rem; }
+.chart-area { position: relative; width: fit-content; max-width: 100%; margin: auto; touch-action: none; user-select: none; -webkit-user-select: none; background: #fff; }
+.chart-area canvas { display: block; max-width: 100%; max-height: 55dvh; }
+.chart-area svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.chart-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem; margin: .75rem 0; }
+.chart-rows { display: grid; gap: .5rem; }
+.chart-rows canvas { width: 100%; height: auto; background: #fff; border-radius: 8px; }
+.chart-rows .whole { max-height: 38dvh; width: auto; max-width: 100%; justify-self: start; }
+
+.chart-rows ol.runs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; font-size: 1.2rem; font-weight: 600; }
+.runs li { display: flex; align-items: center; gap: .45rem; padding: .35rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.swatch { flex: none; width: 1.2em; height: 1.2em; border: 2px solid #808080; border-radius: 5px; }
+.cells { display: flex; border: 1px solid #808080; }
+.cells span { flex: 1; height: 14px; border-right: 1px solid #80808066; }
+.preview { max-width: 34rem; margin: .5rem 0; }
+.preview .cells { border-bottom: 0; }
+.preview .cells span { height: 9px; border-bottom: 1px solid #80808066; }
+dialog label.inline { display: flex; align-items: center; gap: .5rem; }
+dialog label.inline input { width: 9rem; }
+mark.yarn { color: inherit; padding: 0 .2em; border-radius: 6px; background: var(--tint); border-bottom: 4px solid var(--yarn); }
+.yarn-a { --yarn: #b4532a; } .yarn-b { --yarn: #2563eb; } .yarn-c { --yarn: #15803d; } .yarn-d { --yarn: #9333ea; }
+.yarn-e, .yarn-f, .yarn-g, .yarn-h { --yarn: #808080; }
+
 @media (max-width: 700px) {
   .controls:has(.decision) { grid-template-columns: 1fr; }
 

@@ -1,4 +1,4 @@
-import { upgrade, type HistoryEntry, type Project, type Repeat, type Step, type Until } from './project'
+import { upgrade, type Chart, type HistoryEntry, type Project, type Repeat, type Step, type Tip, type Until } from './project'
 
 export const toBackup = (projects: Project[]) =>
   JSON.stringify({ app: 'strickapp', version: 2, projects }, null, 2)
@@ -35,11 +35,14 @@ function parseProject(value: unknown): Project {
       const base = { id, name, createdAt, updatedAt, completedCount, steps }
       if (value.repeats === undefined && value.history === undefined) return upgrade(base)
       const { repeats, history } = value
+      const charts = value.charts ?? []
       if (
+        Array.isArray(charts) && charts.every(isChart) &&
+        steps.every((s) => !s.chart || charts.some((c) => c.id === s.chart!.id && s.chart!.row <= c.rows)) &&
         Array.isArray(repeats) && repeats.every(isRepeat) && fit(repeats, steps) &&
         Array.isArray(history) && history.every((h) => isEntry(h, steps.length, repeats))
       ) {
-        return { ...base, repeats, history }
+        return { ...base, repeats, history, charts }
       }
     }
   }
@@ -52,15 +55,37 @@ const isCount = (v: unknown): v is number => Number.isSafeInteger(v) && (v as nu
 const optional = (v: unknown, check: (v: unknown) => boolean) => v === undefined || check(v)
 const isStep = (v: unknown): v is Step =>
   isRecord(v) && isText(v.id) && isText(v.text) && optional(v.section, isText) && optional(v.page, isCount) &&
-  optional(v.original, isText) && optional(v.note, isText)
+  optional(v.original, isText) && optional(v.note, isText) &&
+  optional(v.tips, (t) => Array.isArray(t) && t.every(isTip)) &&
+  optional(v.chart, (c) => isRecord(c) && isText(c.id) && isCount(c.row) && c.row >= 1)
 
-function copyStep({ id, text, section, page, original, note }: Step): Step {
+const isTip = (v: unknown): v is Tip => isRecord(v) && isText(v.text) && optional(v.after, (a) => typeof a === 'boolean')
+const isShare = (v: unknown) => typeof v === 'number' && v >= 0 && v <= 1
+const isChart = (v: unknown): v is Chart =>
+  isRecord(v) && isText(v.id) && isCount(v.page) && v.page >= 1 && [v.x, v.y, v.w, v.h].every(isShare) &&
+  isCount(v.rows) && v.rows >= 1 && v.rows <= 300 && isCount(v.stitches) && v.stitches >= 1 && v.stitches <= 500 &&
+  typeof v.inRounds === 'boolean' && hasColors(v)
+
+function hasColors(v: Record<string, unknown>): boolean {
+  const { colors, cells, rows, stitches } = v
+  if (colors === undefined && cells === undefined) return true
+  return (
+    Array.isArray(colors) && Array.isArray(cells) && cells.length === rows &&
+    colors.every((c) => isRecord(c) && isText(c.name) && typeof c.hex === 'string' && /^#[0-9a-f]{6}$/.test(c.hex)) &&
+    cells.every((line) => Array.isArray(line) && line.length === stitches &&
+      line.every((c) => isCount(c) && c < colors.length))
+  )
+}
+
+function copyStep({ id, text, section, page, original, note, tips, chart }: Step): Step {
   return {
     id, text,
     ...(section !== undefined && { section }),
     ...(page !== undefined && { page }),
     ...(original !== undefined && { original }),
     ...(note !== undefined && { note }),
+    ...(tips !== undefined && { tips }),
+    ...(chart !== undefined && { chart }),
   }
 }
 

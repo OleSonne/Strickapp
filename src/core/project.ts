@@ -1,3 +1,5 @@
+import type { ChartColor } from './chartColors'
+
 export interface Step {
   id: string
   text: string
@@ -6,6 +8,32 @@ export interface Step {
   page?: number
   original?: string
   note?: string
+  tips?: Tip[]
+  /** Reihe einer Strickschrift, gezählt ab 1. */
+  chart?: { id: string; row: number }
+}
+
+export interface Tip {
+  text: string
+  /** Gilt erst nach der Wiederholung, zu der der Schritt gehört. */
+  after?: boolean
+}
+
+/** Ausschnitt einer Originalseite. Maße als Anteil der Seite von 0 bis 1. */
+export interface Chart {
+  id: string
+  page: number
+  x: number
+  y: number
+  w: number
+  h: number
+  rows: number
+  stitches: number
+  /** In Runden immer von rechts, in Reihen abwechselnd. */
+  inRounds: boolean
+  /** Erkannte Farben und je Reihe (Reihe 1 zuerst) deren Nummern von links nach rechts. */
+  colors?: ChartColor[]
+  cells?: number[][]
 }
 
 export type Until = { kind: 'count'; count: number } | { kind: 'condition'; text: string }
@@ -36,6 +64,7 @@ export interface Project {
   steps: Step[]
   repeats: Repeat[]
   history: HistoryEntry[]
+  charts: Chart[]
 }
 
 const HISTORY_LIMIT = 500
@@ -44,16 +73,18 @@ const newId = () => crypto.randomUUID()
 export function createProject(name: string, now = Date.now()): Project {
   return {
     id: newId(), name: name.trim(), createdAt: now, updatedAt: now,
-    completedCount: 0, steps: [], repeats: [], history: [],
+    completedCount: 0, steps: [], repeats: [], history: [], charts: [],
   }
 }
 
 /** Ergänzt Felder, die ältere gespeicherte Projekte (M2) noch nicht haben. */
-export type StoredProject = Omit<Project, 'repeats' | 'history'> & Partial<Pick<Project, 'repeats' | 'history'>>
+export type StoredProject = Omit<Project, 'repeats' | 'history' | 'charts'> &
+  Partial<Pick<Project, 'repeats' | 'history' | 'charts'>>
 export const upgrade = (p: StoredProject): Project => ({
   ...p,
   repeats: p.repeats ?? [],
   history: p.history ?? [],
+  charts: p.charts ?? [],
 })
 
 export const isFinished = (p: Project) => p.steps.length > 0 && p.completedCount === p.steps.length
@@ -183,6 +214,43 @@ export const editStep = (p: Project, id: string, text: string): Project => ({
   ...p,
   steps: p.steps.map((s) => (s.id === id ? { ...s, text: text.trim() || s.text } : s)),
 })
+
+/** Fügt nach einem Schritt die Reihen einer Strickschrift als einzelne Schritte ein. */
+export function addChart(p: Project, afterId: string, data: Omit<Chart, 'id'>): Project {
+  const index = p.steps.findIndex((s) => s.id === afterId)
+  const anchor = p.steps[index]
+  if (!anchor) throw new Error('Der Schritt ist nicht mehr vorhanden.')
+  const whole = (n: number, max: number) => Number.isSafeInteger(n) && n >= 1 && n <= max
+  if (!whole(data.rows, 300)) throw new Error('Die Reihenzahl muss zwischen 1 und 300 liegen.')
+  if (!whole(data.stitches, 500)) throw new Error('Die Maschenzahl muss zwischen 1 und 500 liegen.')
+  if (data.w < 0.01 || data.h < 0.01) throw new Error('Markiere zuerst die Strickschrift.')
+  const chart: Chart = { ...data, id: newId() }
+  const rows: Step[] = Array.from({ length: data.rows }, (_, i) => ({
+    id: newId(),
+    text: `Strickschrift ${data.inRounds ? 'Runde' : 'Reihe'} ${i + 1}`,
+    page: data.page,
+    chart: { id: chart.id, row: i + 1 },
+    ...(anchor.section !== undefined && { section: anchor.section }),
+  }))
+  const repeats = p.repeats.map((r) => {
+    const at = r.stepIds.indexOf(afterId)
+    return at < 0 ? r : { ...r, stepIds: r.stepIds.toSpliced(at + 1, 0, ...rows.map((s) => s.id)) }
+  })
+  return withSteps({ ...p, repeats, charts: [...p.charts, chart] }, p.steps.toSpliced(index + 1, 0, ...rows))
+}
+
+/** Entfernt eine Strickschrift samt ihren Reihen. */
+export function deleteChart(p: Project, id: string): Project {
+  const gone = p.steps.filter((s) => s.chart?.id === id)
+  const next = gone.reduce((q, s) => deleteStep(q, s.id), p)
+  return { ...next, charts: next.charts.filter((c) => c.id !== id) }
+}
+
+/** Lage der Reihe im Ausschnitt: Reihe 1 ist unten. */
+export function chartRow(chart: Chart, row: number): { top: number; height: number; fromRight: boolean } {
+  const height = 1 / chart.rows
+  return { top: 1 - row * height, height, fromRight: chart.inRounds || row % 2 === 1 }
+}
 
 export function deleteStep(p: Project, id: string): Project {
   const repeats = p.repeats

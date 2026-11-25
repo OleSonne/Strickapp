@@ -90,8 +90,9 @@ describe('Anleitung', () => {
     expect(included(SCARF, { size: 1, variants: {} })).toEqual([
       'Schlage 8 M an.', 'Verteile sie gleichmäßig.', 'Reihe 1 (Rück-R): Stricke alle M li.',
       'Reihe 2 (Hin-R): 2 re, 1 M zunehmen, re bis zum Ende.', 'Reihe 3: Stricke alle M li.',
-      'Nun liegen 13 M auf der Nadel.', 'Kette alle M ab.',
+      'Kette alle M ab.',
     ])
+    expect(parse(SCARF).steps.filter((x) => x.kind === 'tip').map((x) => x.text)).toEqual(['Nun liegen 10 M auf der Nadel.'])
   })
   it('behält den Wortlaut und erkennt die Wiederholung', () => {
     const draft = parse(SCARF, { size: 1, variants: {} })
@@ -113,7 +114,7 @@ describe('Anleitung', () => {
       p = advance(p)
       taps += 1
     }
-    expect(taps).toBe(2 + 3 * 5 + 2)
+    expect(taps).toBe(2 + 3 * 5 + 1)
   })
   it('lässt eine Wiederholung weg, wenn sie nicht mehr zusammenhängt', () => {
     const draft = parse(SCARF)
@@ -165,6 +166,60 @@ describe('Anleitung', () => {
   it('übersteht leeren Text', () => {
     expect(parse('').steps).toEqual([])
     expect(toLines([])).toEqual([])
+  })
+})
+
+describe('Tipps', () => {
+  const build = (text: string) => {
+    const d = parse(text)
+    return buildProject('x', d.steps, d.repeats)
+  }
+  it('hängt Tipps und Kontrollen an den vorigen Schritt', () => {
+    const p = build('Schlage 8 M an.\n\nTIPP: Nicht zu fest anschlagen. Das hilft später.\n\nEs sollten 8 M auf der Nadel liegen.\n\nKette ab.')
+    expect(p.steps.map((s) => s.text)).toEqual(['Schlage 8 M an.', 'Kette ab.'])
+    expect(p.steps[0]!.tips!.map((t) => t.text)).toEqual([
+      'TIPP: Nicht zu fest anschlagen. Das hilft später.', 'Es sollten 8 M auf der Nadel liegen.',
+    ])
+  })
+  it('behandelt ganze Klammersätze als Tipp', () => {
+    const p = build('Cast on 8 sts. (If you like, use 10. That works too.) Knit all.')
+    expect(p.steps.map((s) => s.text)).toEqual(['Cast on 8 sts.', 'Knit all.'])
+    expect(p.steps[0]!.tips).toEqual([{ text: '(If you like, use 10. That works too.)' }])
+  })
+  it('nimmt einen Tipp am Abschnittsanfang zum nächsten Schritt', () => {
+    expect(build('FERSE\n\nTIPP: Locker bleiben.\n\nSchlage 8 M an.').steps[0]!.tips).toHaveLength(1)
+  })
+  it('kennzeichnet Kontrollen nach einer Wiederholung', () => {
+    const d = parse(SCARF)
+    const p = buildProject('x', d.steps, d.repeats)
+    expect(p.steps.find((s) => s.tips)!.tips).toEqual([{ text: 'Nun liegen 10 M auf der Nadel.', after: true }])
+  })
+  it('behält Anweisungen als Schritte', () => {
+    expect(included('Nun strickst du 4 Reihen.\n\nJetzt werden 2 M abgenommen.\n\nWiederhole das (siehe oben).')).toHaveLength(3)
+  })
+  it('löst kleine Kästen aus dem Text, auch wenn sie nicht auf Zeilenhöhe stehen', () => {
+    const lines = toLines([
+      item('Stricke glatt rechts wie folgt:', 10, 20),
+      item('Reihe 1: alle M li, und so weiter.', 10, 48), item('Reihe 2: alle M re.', 10, 62), item('Reihe 3: alle M li.', 10, 76),
+      item('TIPP: Das', 300, 40, { size: 9 }), item('Video', 305, 50, { size: 9, font: 'bold' }), item('hilft dir.', 300, 60, { size: 9 }),
+    ])
+    const d = parsePattern(lines, none)
+    const p = buildProject('x', d.steps, d.repeats)
+    expect(p.steps.map((s) => s.text)).toEqual([
+      'Stricke glatt rechts wie folgt:', 'Reihe 1: alle M li, und so weiter.', 'Reihe 2: alle M re.', 'Reihe 3: alle M li.',
+    ])
+    expect(p.steps[0]!.tips).toEqual([{ text: 'TIPP: Das Video hilft dir.' }])
+  })
+  it('hängt einen Kasten am Rand an den Schritt daneben', () => {
+    const lines = toLines([
+      item('Stricke wie folgt:', 10, 20), item('TIPP: Ein', 300, 20),
+      item('Reihe 1: alle M li.', 10, 34), item('Video', 300, 34, { font: 'bold' }),
+      item('Reihe 2: alle M re.', 10, 48), item('hilft dir.', 300, 48),
+    ])
+    const d = parsePattern(lines, none)
+    const p = buildProject('x', d.steps, d.repeats)
+    expect(p.steps.map((s) => s.text)).toEqual(['Stricke wie folgt:', 'Reihe 1: alle M li.', 'Reihe 2: alle M re.'])
+    expect(p.steps[0]!.tips).toEqual([{ text: 'TIPP: Ein Video hilft dir.' }])
   })
 })
 

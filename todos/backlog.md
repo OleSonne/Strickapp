@@ -9,3 +9,6 @@
 - [ ] T-019 Original-PDFs in die Sicherung aufnehmen
 - [ ] T-020 Verschachtelte Wiederholungen
 - [ ] T-021 Parallele Anweisungen als Erinnerung (z. B. Knopflöcher)
+- [ ] T-025 Strickschrift aus eigenem Foto
+- [ ] T-026 Gitter der Strickschrift automatisch finden
+- [ ] T-027 Symbole in Strickschriften erkennen

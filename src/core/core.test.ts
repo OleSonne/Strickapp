@@ -1,3 +1,4 @@
+import { addChart, chartRow, deleteChart } from './project'
 import { describe, expect, it } from 'vitest'
 import { parseBackup, toBackup } from './backup'
 import { addSteps, advance, canMove, canUndo, createProject, deleteRepeat, deleteStep, editStep, isFinished, leaveRepeat,
@@ -181,11 +182,53 @@ describe('Wiederholungen', () => {
     expect(() => parseBackup(toBackup([broken]))).toThrow('beschädigt')
   })
   it('übernimmt Projekte und Sicherungen aus M2', () => {
-    const { repeats: _r, history: _h, ...old } = sample(1)
+    const { repeats: _r, history: _h, charts: _c, ...old } = sample(1)
     expect(upgrade(old)).toEqual(withDefaults(old))
     const text = JSON.stringify({ app: 'strickapp', version: 1, projects: [old] })
     expect(parseBackup(text)).toEqual([upgrade(old)])
   })
 })
 
-const withDefaults = (old: object) => ({ ...old, repeats: [], history: [] })
+const withDefaults = (old: object) => ({ ...old, repeats: [], history: [], charts: [] })
+
+describe('Strickschrift', () => {
+  const data = { page: 2, x: 0.1, y: 0.2, w: 0.5, h: 0.5, rows: 3, stitches: 8, inRounds: false }
+  const withChart = (completed = 0) => {
+    const p = sample(completed)
+    return addChart(p, id(p, 1), data)
+  }
+  it('fügt jede Reihe als Schritt ein', () => {
+    expect(withChart().steps.map((s) => s.chart?.row ?? s.text)).toEqual(['a', 'b', 1, 2, 3, 'c'])
+  })
+  it('überspringt neue Reihen nicht, wenn man schon weiter ist', () => {
+    expect(withChart(3).completedCount).toBe(2)
+  })
+  it('liest Reihe 1 unten und wechselt in Reihen die Richtung', () => {
+    const chart = withChart().charts[0]!
+    expect(chartRow(chart, 1).top).toBeCloseTo(2 / 3)
+    expect(chartRow(chart, 3).top).toBeCloseTo(0)
+    expect([1, 2, 3].map((r) => chartRow(chart, r).fromRight)).toEqual([true, false, true])
+    expect(chartRow({ ...chart, inRounds: true }, 2).fromRight).toBe(true)
+  })
+  it('gehört zur Wiederholung des Schritts', () => {
+    const p = sample()
+    const r = saveRepeat(p, 0, 1, { kind: 'count', count: 2 })
+    expect(addChart(r, id(r, 0), data).repeats[0]!.stepIds).toHaveLength(5)
+  })
+  it('lässt sich wieder entfernen', () => {
+    const p = withChart()
+    const q = deleteChart(p, p.charts[0]!.id)
+    expect([q.steps.length, q.charts.length]).toEqual([3, 0])
+  })
+  it('lehnt ungültige Angaben ab', () => {
+    const p = sample()
+    expect(() => addChart(p, id(p, 0), { ...data, rows: 0 })).toThrow('Reihenzahl')
+    expect(() => addChart(p, id(p, 0), { ...data, stitches: NaN })).toThrow('Maschenzahl')
+    expect(() => addChart(p, id(p, 0), { ...data, w: 0 })).toThrow('Markiere')
+  })
+  it('übersteht die Sicherung', () => {
+    const p = withChart()
+    expect(parseBackup(toBackup([p]))).toEqual([p])
+    expect(() => parseBackup(toBackup([{ ...p, charts: [] }]))).toThrow('beschädigt')
+  })
+})

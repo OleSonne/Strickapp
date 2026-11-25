@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ChartDialog } from './components/ChartDialog'
 import { ConfirmDialog, TextDialog, type ConfirmRequest, type TextRequest } from './components/Dialogs'
 import { ImportView } from './components/ImportView'
 import { ProjectDetail } from './components/ProjectDetail'
 import { ProjectList } from './components/ProjectList'
 import { RepeatDialog } from './components/RepeatDialog'
 import { parseBackup, toBackup } from './core/backup'
-import { addSteps, createProject, editStep, rename, saveRepeat, splitSteps, type Project, type Repeat } from './core/project'
+import { addChart, addSteps, createProject, editStep, rename, saveRepeat, splitSteps, type Project, type Repeat, type Step } from './core/project'
 import * as store from './data/store'
 
 const idFromHash = () => location.hash.slice(1) || null
@@ -16,6 +17,7 @@ export function App() {
   const [textRequest, setTextRequest] = useState<TextRequest | null>(null)
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null)
   const [repeatRequest, setRepeatRequest] = useState<{ repeat?: Repeat } | null>(null)
+  const [chartStep, setChartStep] = useState<Step | null>(null)
   const [importing, setImporting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -139,6 +141,7 @@ export function App() {
             })
           }
           onEditRepeat={(repeat) => setRepeatRequest({ repeat })}
+          onAddChart={setChartStep}
           onRename={() =>
             setTextRequest({
               title: 'Projekt umbenennen',
@@ -166,6 +169,22 @@ export function App() {
       )}
       {textRequest && <TextDialog request={textRequest} onClose={() => setTextRequest(null)} />}
       {confirmRequest && <ConfirmDialog request={confirmRequest} onClose={() => setConfirmRequest(null)} />}
+      {chartStep && selected && (
+        <ChartDialog
+          projectId={selected.id}
+          page={chartStep.page ?? 1}
+          onClose={() => setChartStep(null)}
+          onSave={async (data) => {
+            try {
+              addChart(selected, chartStep.id, data)
+            } catch (error) {
+              return error instanceof Error ? error.message : String(error)
+            }
+            const ok = await run(() => store.updateProject(selected.id, (p) => addChart(p, chartStep.id, data)))
+            return ok ? null : 'Das wurde nicht gespeichert.'
+          }}
+        />
+      )}
       {repeatRequest && selected && (
         <RepeatDialog
           project={selected}

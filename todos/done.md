@@ -11,3 +11,4 @@
 - [x] T-015 (M2) Web-App veröffentlicht, läuft auf dem iPad (2026-11-25)
 - [x] T-009 (M3) Strickansicht mit Wiederholungen veröffentlicht (2026-11-25)
 - [x] T-010 (M4) Selbst geschriebene Testanleitungen (2026-11-25)
+- [x] T-011/T-012 (M4) Import und Prüfansicht veröffentlicht (2026-11-25)

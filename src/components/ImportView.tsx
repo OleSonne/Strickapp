@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { buildProject } from '../core/import/build'
+import { buildProject, tipTarget } from '../core/import/build'
 import { textToLines, toLines, type Line } from '../core/import/lines'
 import { analyze, parsePattern, type Choices, type DraftRepeat, type DraftStep } from '../core/import/parse'
 import type { Project } from '../core/project'
@@ -153,6 +153,12 @@ export function ImportView({ onSave, onCancel }: Props) {
     })
   }
 
+  const usable = included
+  const tipPlace = (index: number) => {
+    const target = tipTarget(draft.steps, index, usable)
+    return target ? `Tipp zu: ${target.text.slice(0, 70)}` : 'Noch kein passender Schritt.'
+  }
+
   const save = async () => {
     setBusy(true)
     const project = buildProject(name, draft.steps, draft.repeats)
@@ -183,7 +189,7 @@ export function ImportView({ onSave, onCancel }: Props) {
             </li>
           )
           return (
-            <li key={step.id} className={`draft${step.included ? '' : ' off'}${inRepeat ? ' repeated' : ''}`}>
+            <li key={step.id} className={`draft${step.kind === 'tip' ? ' tip' : ''}${step.included ? '' : ' off'}${inRepeat ? ' repeated' : ''}`}>
               {repeat && (
                 <div className="repeat">
                   <span>
@@ -213,7 +219,15 @@ export function ImportView({ onSave, onCancel }: Props) {
                   onChange={(e) => change(step.id, { text: e.target.value })} />
                 {step.original !== step.text && <small>Im Original: {step.original}</small>}
                 {step.warnings.map((w) => <small key={w} className="warning">{w}</small>)}
-                {previous?.kind === 'step' && (
+                {step.kind === 'tip' && <small>{tipPlace(index)}</small>}
+                <label className="inline">
+                  Art
+                  <select value={step.kind} onChange={(e) => change(step.id, { kind: e.target.value as 'step' | 'tip' })}>
+                    <option value="step">Schritt</option>
+                    <option value="tip">Tipp zu einem Schritt</option>
+                  </select>
+                </label>
+                {step.kind === 'step' && previous?.kind === 'step' && (
                   <button className="small" onClick={() => join(index)}>Mit vorigem verbinden</button>
                 )}
               </div>

@@ -1,10 +1,11 @@
 import type { Until } from '../project'
-import type { Line } from './lines'
+import { TIP_START, type Line } from './lines'
 import { countSizes, pickSize, sizeNames } from './sizes'
 
 export interface DraftStep {
   id: string
-  kind: 'heading' | 'step'
+  /** Ein Tipp gehört zu einem Schritt und wird nicht abgehakt. */
+  kind: 'heading' | 'step' | 'tip'
   text: string
   /** Wortlaut der Anleitung, vor Größenwahl und Auflösung von Verweisen. */
   original: string
@@ -12,6 +13,8 @@ export interface DraftStep {
   section: string
   included: boolean
   warnings: string[]
+  /** Schritt, zu dem ein Tipp aus einer Randspalte gehört. */
+  attachTo?: string
 }
 
 export interface DraftRepeat {
@@ -43,6 +46,9 @@ const ROW = /^(?:(?:Reihen?|Runden?|Rows?|Rounds?|Rnds?|R)\.?\s*(\d+)(?:\s*[-–
 const REPEAT_START = /^(?:Rep(?:eat)?|Wiederhole|Stricke|Arbeite|Work)\s+(?:nun\s+|die\s+|diese\s+|these\s+|the\s+last\s+|die\s+letzten\s+)*(?:Reihen?|Runden?|Rows?|Rounds?|Rnds?|\d+\s+(?:Reihen|Runden|rows|rounds))\b/i
 const AFTER_REPEAT = /[,;]\s+(?:then|dann|danach|anschließend)\b/i
 const MANUAL_REPEAT = 'Wiederholung nicht automatisch erkannt, bitte selbst anlegen.'
+// Maschenkontrollen und Erläuterungen, bei denen nichts zu stricken ist.
+const REMARK = /^(?:(?:nun|jetzt)\s+(?:liegen|sind|hast du|solltest|sollten)\b|es sollten\b|es liegen\b|du solltest\b|insgesamt hast du\b|zwischen den .{1,30} sollten\b|das entspricht\b|denke daran|achte darauf|you should\b|there should\b|you (?:will )?now have\b|keep in mind|that number will|in the sample|ensure\b|make sure\b)/i
+const ENCLOSED = /^(?:\([^()]*(?:\([^()]*\)[^()]*)*\)|(?:\[[^\]]*(?:count|sts|M\b|Maschen)[^\]]*\]\s*)+)\.?$/i
 const START = /^(?:anleitung|instructions?|anschlag|casting on|cast on)\b/i
 const BACKGROUND = /abk(?:ü|u)rz|abbrev|material|gauge|maschenprobe|^garn|^yarn|^(?:video)?tutorials$|^größe|^sizes?\b|sizing|pflege|^tipps?\b|disclaimer|introduction|einleitung|description|measurements|^hinweis|^basics|^workflow|konstruktion|anpassungen|^to make (?:larger|smaller)|^über\b|informationen/i
 const CLUTTER = /©|copyright|https?:|www\.|instagram|#\w{4,}|^@|@\w+\.\w|^\d{1,3}\.?$|all ?rights ?reserved|nur für den privaten gebrauch/i
@@ -85,23 +91,28 @@ interface Block {
   text: string
   page: number
   heading: boolean
+  scattered?: boolean
   columns?: Line['columns']
 }
+
+const sameColumnAs = (a: Pick<Line, 'columns'>, b: Pick<Line, 'columns'>) =>
+  a.columns?.block === b.columns?.block && a.columns?.side === b.columns?.side
 
 function toBlocks(lines: Line[]): Block[] {
   const blocks: Block[] = []
   for (const line of lines) {
     const last = blocks.at(-1)
     const isRow = ROW.test(line.text)
-    const heading = line.emphasis && (line.large || line.paragraph) && !isRow && /^[A-ZÄÖÜ]/.test(line.text) &&
+    const tipGoesOn = last !== undefined && TIP_START.test(last.text) && sameColumnAs(last, line) && !line.paragraph
+    const heading = !tipGoesOn && line.emphasis && (line.large || line.paragraph) && !isRow && /^[A-ZÄÖÜ]/.test(line.text) &&
       !INSTRUCTION.test(line.text) && !/\d\s?\(\d/.test(line.text) && line.text.length < 60 && !/[.,;]$/.test(line.text) && !/^\d+$/.test(line.text)
-    const sameColumn = last?.columns?.block === line.columns?.block && last?.columns?.side === line.columns?.side
+    const sameColumn = last !== undefined && sameColumnAs(last, line)
     // In einer offenen Klammer geht die Reihe weiter.
     const openBracket = last !== undefined && last.text.lastIndexOf('[') > last.text.lastIndexOf(']')
     const starts = !last || heading || last.heading || (line.paragraph && !openBracket) || isRow || REPEAT_START.test(line.text) ||
-      !sameColumn || CLUTTER.test(line.text)
+      !sameColumn || line.scattered || last.scattered || CLUTTER.test(line.text)
     if (starts) {
-      blocks.push({ text: line.text, page: line.page, heading, ...(line.columns && { columns: line.columns }) })
+      blocks.push({ text: line.text, page: line.page, heading, ...(line.scattered && { scattered: true }), ...(line.columns && { columns: line.columns }) })
     } else {
       // Silbentrennung nur vor Kleinbuchstaben auflösen, „I-Cord“ bleibt.
       last.text = /[a-zäöüß]-$/.test(last.text) && /^[a-zäöüß]/.test(line.text)
@@ -118,7 +129,8 @@ export function splitSentences(text: string): string[] {
   const result: string[] = []
   for (const part of text.split(/(?<=[.!?]\)?)\s+(?=[A-ZÄÖÜ([„"])/)) {
     const last = result.at(-1)
-    if (last !== undefined && ABBREVIATION.test(last)) result[result.length - 1] = `${last} ${part}`
+    const open = last !== undefined && (last.match(/\(/g)?.length ?? 0) > (last.match(/\)/g)?.length ?? 0)
+    if (last !== undefined && (open || ABBREVIATION.test(last))) result[result.length - 1] = `${last} ${part}`
     else result.push(part)
   }
   return result.map((s) => s.trim()).filter(Boolean)
@@ -146,10 +158,14 @@ export function parsePattern(lines: Line[], choices: Choices): Draft {
     const choice = key === undefined ? 2 : (choices.variants[key] ?? 2)
     const dropped = block.columns !== undefined && choice !== 2 && choice !== block.columns.side
     const add = (kind: DraftStep['kind'], text: string, original: string, unclear: boolean, row?: number) => {
+      // Randspalte: Der Tipp gehört zum ersten Schritt daneben.
+      const beside = kind === 'tip' && block.columns?.side === 1
+        ? steps.find((s) => s.kind === 'step' && meta.get(s.id)?.block === block.columns!.block && meta.get(s.id)?.side === 0)
+        : undefined
       const id = `s${next++}`
       const warnings = kind === 'heading' ? [] : warningsFor(text, unclear, english)
-      const included = started && !background && !dropped && !CLUTTER.test(original)
-      steps.push({ id, kind, text, original, page: block.page, section, included, warnings })
+      const included = started && !background && !dropped && !block.scattered && !CLUTTER.test(original)
+      steps.push({ id, kind, text, original, page: block.page, section, included, warnings, ...(beside && { attachTo: beside.id }) })
       meta.set(id, { ...(row !== undefined && { row }), ...(block.columns && { block: block.columns.block, side: block.columns.side }) })
     }
 
@@ -178,6 +194,11 @@ export function parsePattern(lines: Line[], choices: Choices): Draft {
       }
       continue
     }
+    if (TIP_START.test(block.text)) {
+      const picked = pickSize(block.text, count, choices.size)
+      add('tip', picked.text, block.text, picked.unclear)
+      continue
+    }
     for (const sentence of splitSentences(block.text)) {
       const picked = pickSize(sentence, count, choices.size)
       // „…, dann abketten“ nach einer Wiederholung ist ein eigener Schritt.
@@ -189,6 +210,10 @@ export function parsePattern(lines: Line[], choices: Choices): Draft {
           const pickedRest = pickSize(rest, count, choices.size)
           add('step', pickedRest.text, sentence, pickedRest.unclear)
         }
+        continue
+      }
+      if (REMARK.test(sentence) || ENCLOSED.test(sentence) || TIP_START.test(sentence)) {
+        add('tip', picked.text, sentence, picked.unclear)
         continue
       }
       add('step', picked.text, sentence, picked.unclear)

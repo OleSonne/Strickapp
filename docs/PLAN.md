@@ -12,6 +12,8 @@
 - Web-App mit Icon auf dem Home-Bildschirm statt nativer App.
 - Kein KI-Dienst im Internet.
 - Nur für private Nutzung, kein App Store.
+- Strickschriften Reihe für Reihe durchgehen, Farben in der Reihe erkennen.
+- Tipps stehen beim Schritt, zu dem sie gehören.
 - Vorerst nur Stricken, kein Häkeln.
 - Schritte englischer Anleitungen erscheinen auf Deutsch.
 - Zielgerät ist zunächst das iPad. Das iPhone folgt später.
@@ -74,7 +76,9 @@ Schrift nur grafisch und braucht Texterkennung.
 3. Englisch: Strickbegriffe und typische Satzmuster über ein Glossar. Unübersetztes bleibt im Original und wird markiert.
 4. Nutzer prüft und korrigiert alles. Das ist fester Teil des Imports.
 
-Strickschriften werden als Bild gezeigt, nicht interpretiert.
+Strickschriften: Der Nutzer markiert den Ausschnitt und gibt Reihen und Maschen an.
+Die App führt Reihe für Reihe hindurch und erkennt Farben der Kästchen. Symbole
+werden als Bild gezeigt, nicht interpretiert.
 
 ## Meilensteine
 

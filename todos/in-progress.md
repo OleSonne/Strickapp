@@ -1,3 +1,4 @@
 # In Arbeit
 
-- [ ] T-011/T-012 (M4) Import und Prüfansicht: gebaut, iPad-Test offen
+- [ ] T-022 bis T-024 (M4) Tipps am Schritt, Strickschrift reihenweise, Farben: gebaut,
+  iPad-Test offen
