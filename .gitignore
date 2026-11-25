@@ -28,3 +28,9 @@ Secrets.xcconfig
 
 # Private Strickanleitungen (urheberrechtlich geschützt, Repo ist öffentlich)
 /beispiele/
+
+# Web
+node_modules/
+dist/
+test-results/
+playwright-report/

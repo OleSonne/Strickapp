@@ -1,6 +1,6 @@
 # 0001: Technische Grundlage
 
-**Status:** Angenommen (2026-11-25)
+**Status:** Ersetzt durch 0002
 
 ## Entscheidung
 

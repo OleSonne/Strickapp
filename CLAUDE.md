@@ -1,10 +1,10 @@
 # Anweisungen für Claude
 
-Strickapp ist eine iOS-App zum Stricken. Mit dem Nutzer auf Deutsch sprechen.
+Strickapp ist eine Web-App (PWA) zum Stricken für iPad und iPhone. Mit dem Nutzer auf Deutsch sprechen.
 
 ## Aktuelle Phase: M2, Projekte
 
-M1 läuft auf dem iPad. M2 ist geschrieben, Build und iPad-Test stehen aus.
+M2 ist als Web-App gebaut. Offen: Veröffentlichung und Test auf dem iPad.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
@@ -23,58 +23,44 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Umgebung
 
-- Entwicklungsrechner ist Linux: Xcode, Simulator und SwiftUI gibt es hier nicht.
-- Nie behaupten, etwas sei gebaut oder getestet, wenn das nicht passiert ist.
-  Ungeprüftes klar benennen.
-- Testbefehl für `Core` steht in der README. Die App selbst baut nur die CI (macOS)
-  oder das iPad.
-- Neue Dateien kommen automatisch ins App-Target. Nur ein Target, keine lokalen
-  Pakete, damit Swift Playground das Projekt öffnen kann.
+- Kein Node auf dem Rechner: alle Befehle im Docker-Container, siehe README.
+- Das Playwright-Image muss dieselbe Version wie `@playwright/test` haben.
+- WebKit in Playwright ist nicht Safari. Auf dem iPad Ungeprüftes klar benennen.
 
-## Technik (siehe docs/decisions/0001-technik.md)
+## Technik (siehe docs/decisions/0002-web-app.md)
 
-- Swift, SwiftUI, SwiftData, ab iOS/iPadOS 17.
-- Zuerst für das iPad (Hoch- und Querformat, Split View), Layout aber so bauen,
-  dass das iPhone später folgen kann.
-- Apple-Frameworks bevorzugen. Neue Abhängigkeiten nur nach Rückfrage.
+- TypeScript (strict), React, Vite, IndexedDB über `idb`, offline per Service Worker.
+- Neue Abhängigkeiten nur nach Rückfrage, Versionen fest eintragen.
+- Keine Inhalte von fremden Servern laden (Schriften, Skripte, Analyse).
 
 ## Architektur
 
-- Nach Funktion ordnen: `Strickapp.swiftpm/Features/<Name>/`.
-- Views zeigen an. Fachlogik (Erkennung, Fortschritt) liegt in
-  `Strickapp.swiftpm/Core/`, nur mit Foundation, ohne Apple-UI-Frameworks.
-- `@Observable` für eigenen Zustand, `@Query` für einfache Listen. Ein ViewModel
-  nur anlegen, wenn die View nennenswerte Logik hat.
-- Features hängen nicht voneinander ab. Gemeinsames kommt nach `Models`,
-  `Services` oder `DesignSystem`.
-- Abhängigkeiten übergeben statt neue Singletons anzulegen.
+- `src/core/`: Fachlogik als reine Funktionen, ohne React und Browser-Speicher.
+- `src/data/`: einziger Zugriff auf IndexedDB. Ändern immer in einer Transaktion.
+- `src/components/`: Anzeige, bekommt Daten und Aktionen als Props.
 
 ## Code
 
 - Bezeichner auf Englisch, Oberfläche immer auf Deutsch.
-- Swift API Design Guidelines befolgen, Dateien und Views klein halten.
-- Kein Force-Unwrap (`!`) und kein `try!` im App-Code.
-- Nebenläufigkeit mit `async/await`, UI-Zustand auf dem `@MainActor`.
+- Kein `any`. Daten von außen (Dateien) vollständig prüfen.
 - Fehler behandeln und verständlich anzeigen, nicht verschlucken.
 - Kommentare erklären das Warum.
 
 ## Bedienung
 
 - Beim Stricken sind die Hände beschäftigt: große Tippflächen (mindestens
-  44 × 44 pt, Zähler deutlich größer), wenige Schritte, Rückgängig.
+  44 × 44 px, Zähler deutlich größer), wenige Schritte, Rückgängig.
 - Zählerstände sofort speichern. Ein Absturz darf keinen Fortschritt kosten.
 - Alles Wesentliche funktioniert offline.
-- Dynamic Type, VoiceOver und Dark Mode unterstützen. Information nie nur über
+- Textvergrößerung, VoiceOver, Tastatur und Dark Mode unterstützen. Information nie nur über
   Farbe vermitteln.
-- Texte direkt auf Deutsch in den Views. Die App bleibt einsprachig, ein String
-  Catalog ist dafür nicht nötig.
-- Apple Human Interface Guidelines beachten.
+- Texte direkt auf Deutsch in den Komponenten, die App bleibt einsprachig.
 
 ## Daten und Datenschutz
 
 - Daten bleiben lokal. Tracking, Konten oder Cloud nur nach Freigabe.
 - Keine Secrets ins Repo. Das GitHub-Repo ist öffentlich.
-- Änderungen am Datenmodell nach Veröffentlichung brauchen eine Migration.
+- Änderungen an IndexedDB und Sicherungsformat nach Veröffentlichung brauchen eine Migration.
 - Keine urheberrechtlich geschützten Strickanleitungen ins Repo legen, auch nicht
   als Testdaten. Beispiele selbst schreiben.
 
@@ -83,8 +69,8 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 - Nie Schritte erfinden oder still weglassen. Unsicheres markieren.
 - Originalanleitung behalten und jederzeit anzeigen können.
 - Jeder erkannte Schritt ist vom Nutzer korrigierbar.
-- Erkennung und Fortschrittslogik ohne UI-Abhängigkeit schreiben, damit sie auch
-  unter Linux testbar sind.
+- Erkennung und Fortschrittslogik ohne UI-Abhängigkeit schreiben, damit sie
+  direkt testbar sind.
 - Anleitungen nie an externe Dienste senden, Erkennung und Übersetzung laufen auf
   dem Gerät.
 - Private Beispiele liegen in `beispiele/` (per .gitignore ausgeschlossen). Nie
@@ -94,7 +80,8 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 - Fachlogik mit Unit-Tests absichern, auch Randfälle (Zähler bei 0, Rückgängig).
 - Fehler erst mit einem Test nachstellen, dann beheben.
-- UI-Tests gibt es vorerst nicht, Abläufe auf dem iPad prüfen.
+- Wichtige Abläufe mit Playwright testen (iPad- und iPhone-Größe), neue Funktionen
+  zusätzlich auf dem iPad.
 
 ## Git
 

@@ -8,21 +8,32 @@ permissions:
   contents: read
 
 jobs:
-  core-tests:
+  test:
     runs-on: ubuntu-latest
-    container: swift:6.1
+    container: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
       - uses: actions/checkout@v4
-      - run: swift test
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run e2e
+        env:
+          HOME: /root
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: dist
 
-  app-build:
-    runs-on: macos-15
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Build app
-        working-directory: Strickapp.swiftpm
-        run: |
-          xcodebuild -list
-          xcodebuild build -scheme Strickapp \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO
+      - id: deploy
+        uses: actions/deploy-pages@v4

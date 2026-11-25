@@ -9,12 +9,13 @@
 - Mehrere Projekte sind möglich, jedes speichert seinen eigenen Stand.
 - Geräte: iPhone und iPad. Kein Mac vorhanden.
 - Anleitungen auf Deutsch und Englisch, in der App immer Deutsch.
+- Web-App mit Icon auf dem Home-Bildschirm statt nativer App.
 - Kein KI-Dienst im Internet.
 - Nur für private Nutzung, kein App Store.
 - Vorerst nur Stricken, kein Häkeln.
 - Schritte englischer Anleitungen erscheinen auf Deutsch.
 - Zielgerät ist zunächst das iPad. Das iPhone folgt später.
-- Testgerät: iPad Air (4. Generation), iPadOS 26.5.2, Swift Playground installiert.
+- Testgerät: iPad Air (4. Generation), iPadOS 26.5.2.
 
 ## Vorschlag für den Ablauf
 
@@ -37,15 +38,13 @@
 
 ## Offene Fragen
 
-1. Wie kommt der Code vom Repo aufs iPad?
+1. Wie gut ist Texterkennung im Browser (z. B. Tesseract, vor M4 prüfen)?
+2. Wie weit reicht das Glossar für englischen Fließtext?
 
-## Build-Weg ohne Mac (Vorschlag)
+## Veröffentlichung
 
-- Fachlogik als Swift Package, unter Linux im Docker-Container getestet
-- Build und Tests der App per GitHub Actions auf macOS
-- Installation: zuerst Swift Playground auf dem iPad, noch zu prüfen
-- Später für das iPhone: Sideloading (muss regelmäßig erneuert werden) oder
-  TestFlight (kostenpflichtiges Apple Developer Program)
+GitHub Actions testet jeden Push und stellt `main` auf GitHub Pages bereit. Der Code
+ist öffentlich, Projekte und Anleitungen bleiben auf dem Gerät.
 
 ## Auswertung der Beispiele (2026-11-25)
 
@@ -69,12 +68,10 @@ Schrift nur grafisch und braucht Texterkennung.
 
 ## Vorschlag zur Erkennung
 
-1. Text aus PDF mit Positionen (PDFKit). Seiten ohne Text per Texterkennung
-   auf dem Gerät (Vision).
+1. Text aus PDF mit Positionen (pdf.js). Seiten ohne Text per Texterkennung
+   im Browser, falls gut genug (zu prüfen).
 2. Abschnitte, Reihen, Größen und Wiederholungen mit festen Regeln erkennen.
-3. Englisch: Strickbegriffe und typische Satzmuster über ein Glossar. Restlichen
-   Fließtext mit Apples Übersetzung auf dem Gerät, falls verfügbar (zu prüfen).
-   Unübersetztes bleibt im Original und wird markiert.
+3. Englisch: Strickbegriffe und typische Satzmuster über ein Glossar. Unübersetztes bleibt im Original und wird markiert.
 4. Nutzer prüft und korrigiert alles. Das ist fester Teil des Imports.
 
 Strickschriften werden als Bild gezeigt, nicht interpretiert.
@@ -84,8 +81,8 @@ Strickschriften werden als Bild gezeigt, nicht interpretiert.
 | Nr. | Ergebnis |
 | --- | --- |
 | M0 | Plan freigegeben, Build-Weg geklärt |
-| M1 | App startet auf dem iPad, CI baut und testet |
-| M2 | Mehrere Projekte, Schritte von Hand, Stand wird gespeichert |
+| M1 | App-Grundgerüst, CI baut und testet |
+| M2 | Mehrere Projekte, Schritte von Hand, Stand wird gespeichert, Sicherung |
 | M3 | Schritt-für-Schritt-Ansicht mit Wiederholungen und Rückgängig |
 | M4 | PDF-Import mit Text- und Regelerkennung, mit Prüfansicht |
 | M5 | Englische Anleitungen auf Deutsch |
@@ -93,16 +90,12 @@ Strickschriften werden als Bild gezeigt, nicht interpretiert.
 
 ## Später
 
-Garn und Nadeln am Projekt, Fotoimport, Maschenproben-Rechner, Widget,
-Apple Watch, iCloud
+Garn und Nadeln am Projekt, Fotoimport, Maschenproben-Rechner
 
 ## Risiken
 
 - **Erkennung:** Anleitungen sind sehr unterschiedlich aufgebaut (Abkürzungen,
   Größen in Klammern, „gleichzeitig“). Früh mit echten Beispielen testen.
-- **Kein Xcode unter Linux:** Kein Mac vorhanden, siehe Build-Weg.
-- **Installation:** Ohne kostenpflichtiges Apple Developer Program ist sie auf dem
-  iPhone umständlich.
-- **Geräte-KI:** Das iPad Air 4 (A14) unterstützt Apple Intelligence nicht. Die
-  Erkennung muss mit festen Regeln auskommen.
+- **Datenverlust:** Browserdaten können gelöscht werden. Sicherung anbieten.
+- **Keine KI:** Die Erkennung muss mit festen Regeln auskommen.
 - **Urheberrecht:** Importierte Anleitungen bleiben privat auf dem Gerät.
