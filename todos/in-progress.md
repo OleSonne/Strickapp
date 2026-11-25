@@ -1,3 +1,3 @@
 # In Arbeit
 
-- [ ] T-009 (M3) Strickansicht mit Wiederholungen und Rückgängig: gebaut, iPad-Test offen
+- [ ] T-011/T-012 (M4) Import und Prüfansicht: gebaut, iPad-Test offen

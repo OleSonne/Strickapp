@@ -116,7 +116,7 @@ test('Projekte aus M2 bleiben erhalten', async ({ page }) => {
   // Erst danach hat die App die Datenbank angelegt.
   await expect(page.getByText('Noch keine Projekte.')).toBeVisible()
   await page.evaluate(() => new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open('strickapp', 1)
+    const request = indexedDB.open('strickapp')
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
       const tx = request.result.transaction('projects', 'readwrite')

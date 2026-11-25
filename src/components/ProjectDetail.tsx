@@ -4,6 +4,7 @@ import {
   advance, canMove, canUndo, deleteRepeat, deleteStep, isFinished, leaveRepeat, moveStep, needsDecision,
   repeatAt, undo, type Project, type Repeat, type Step,
 } from '../core/project'
+import { OriginalDialog } from './OriginalDialog'
 import { KnitView } from './KnitView'
 
 
@@ -20,6 +21,7 @@ interface Props {
 
 export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEditRepeat, onRename, onDelete, onBack }: Props) {
   const [overview, setOverview] = useState(false)
+  const [originalPage, setOriginalPage] = useState<number | null>(null)
   const [wantsEdit, setEditing] = useState(false)
   const current = useRef<HTMLLIElement>(null)
   const { steps, completedCount } = project
@@ -56,7 +58,7 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
       </header>
 
       {steps.length === 0 && <p className="empty">Noch keine Schritte. Füge oben welche hinzu.</p>}
-      {!showList && <KnitView project={project} />}
+      {!showList && <KnitView key={project.steps[completedCount]?.id ?? 'done'} project={project} onOriginal={setOriginalPage} />}
       {showList && <ol>
         {steps.map((step, index) => {
           const state = index < completedCount ? 'done' : index === completedCount ? 'current' : 'open'
@@ -69,6 +71,9 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
               className={`step ${state}${repeat ? ' repeated' : ''}`}
               aria-current={state === 'current' ? 'step' : undefined}
             >
+              {step.section && step.section !== steps[index - 1]?.section && (
+                <h2 className="section">{step.section}</h2>
+              )}
               {repeat && startsRepeat && (
                 <div className="repeat">
                   <span>↻ {rangeLabel(project, repeat)}: {untilLabel(repeat)}</span>
@@ -120,6 +125,9 @@ export function ProjectDetail({ project, onChange, onAddSteps, onEditStep, onEdi
             </button>
           )}
         </div>
+      )}
+      {originalPage !== null && (
+        <OriginalDialog projectId={project.id} page={originalPage} onClose={() => setOriginalPage(null)} />
       )}
     </main>
   )

@@ -90,6 +90,27 @@ dialog .actions { justify-content: flex-end; margin-top: 1rem; }
 .step.repeated { border-left: 5px solid var(--accent); }
 .decision { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 
+.warning { color: var(--text); border-left: 4px solid var(--accent); padding-left: .6rem; }
+.section { flex-basis: 100%; font-size: 1.05rem; margin: 0; }
+dialog.wide { width: min(70rem, calc(100vw - 1rem)); max-height: calc(100dvh - 1rem); }
+.original { width: 100%; height: auto; background: #fff; border-radius: 8px; }
+dialog.wide .actions { position: sticky; bottom: -1.25rem; padding: .75rem 0; background: var(--surface); align-items: center; }
+.import .fields, .import label.fields { max-width: 40rem; }
+.import label { display: grid; gap: .4rem; }
+.import input:not([type=checkbox]), .import select, .import textarea {
+  width: 100%; min-height: 44px; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+}
+.draft-heading { font-weight: 700; margin-top: 1rem; }
+.draft { display: flex; flex-wrap: wrap; gap: .75rem; padding: .75rem; border: 1px solid var(--line); border-radius: 12px; }
+.draft.off textarea { opacity: .6; text-decoration: line-through; }
+.draft.repeated { border-left: 5px solid var(--accent); }
+.check { width: 44px; min-height: 44px; place-items: center; }
+.check input { width: 26px; height: 26px; accent-color: var(--accent); }
+.draft-body { flex: 1 1 14rem; display: grid; gap: .4rem; justify-items: start; min-width: 0; }
+.draft-body textarea { resize: vertical; }
+.small { font-size: .95rem; }
+.repeat small { flex-basis: 100%; font-weight: 400; }
+
 @media (max-width: 700px) {
   .controls:has(.decision) { grid-template-columns: 1fr; }
 

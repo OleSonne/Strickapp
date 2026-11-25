@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ConfirmDialog, TextDialog, type ConfirmRequest, type TextRequest } from './components/Dialogs'
+import { ImportView } from './components/ImportView'
 import { ProjectDetail } from './components/ProjectDetail'
 import { ProjectList } from './components/ProjectList'
 import { RepeatDialog } from './components/RepeatDialog'
@@ -15,6 +16,7 @@ export function App() {
   const [textRequest, setTextRequest] = useState<TextRequest | null>(null)
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null)
   const [repeatRequest, setRepeatRequest] = useState<{ repeat?: Repeat } | null>(null)
+  const [importing, setImporting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
   /** Führt eine Änderung aus und zeigt danach den gespeicherten Stand. */
@@ -34,7 +36,10 @@ export function App() {
     const reload = () => {
       if (document.visibilityState === 'visible') void run(async () => {})
     }
-    const onHash = () => setSelectedId(idFromHash())
+    const onHash = () => {
+      setImporting(false)
+      setSelectedId(idFromHash())
+    }
     document.addEventListener('visibilitychange', reload)
     window.addEventListener('hashchange', onHash)
     return () => {
@@ -82,18 +87,35 @@ export function App() {
     })
 
   return (
-    <div className={selected ? 'app has-selection' : 'app'}>
+    <div className={selected || importing ? 'app has-selection' : 'app'}>
       {projects && (
         <ProjectList
           projects={projects}
           selectedId={selectedId}
-          onSelect={select}
+          onSelect={(id) => {
+            if (importing && id === selectedId) setImporting(false)
+            select(id)
+          }}
+          onImportPattern={() => setImporting(true)}
           onCreate={create}
           onExport={exportBackup}
           onImport={importBackup}
         />
       )}
-      {selected ? (
+      {importing ? (
+        <ImportView
+          onCancel={() => setImporting(false)}
+          onSave={async (project, source) => {
+            const ok = await run(() => store.addProject(project, source))
+            if (ok) {
+              setImporting(false)
+              select(project.id)
+              void navigator.storage?.persist?.().catch(() => false)
+            }
+            return ok
+          }}
+        />
+      ) : selected ? (
         <ProjectDetail
           key={selected.id}
           project={selected}

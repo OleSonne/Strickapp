@@ -30,7 +30,7 @@ function parseProject(value: unknown): Project {
     value.completedCount <= value.steps.length
   ) {
     const { id, name, createdAt, updatedAt, completedCount } = value
-    const steps = value.steps.map((s: Step) => ({ id: s.id, text: s.text }))
+    const steps = value.steps.map(copyStep)
     if (new Set(steps.map((s) => s.id)).size === steps.length) {
       const base = { id, name, createdAt, updatedAt, completedCount, steps }
       if (value.repeats === undefined && value.history === undefined) return upgrade(base)
@@ -49,7 +49,21 @@ function parseProject(value: unknown): Project {
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
 const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0
 const isCount = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0
-const isStep = (v: unknown): v is Step => isRecord(v) && isText(v.id) && isText(v.text)
+const optional = (v: unknown, check: (v: unknown) => boolean) => v === undefined || check(v)
+const isStep = (v: unknown): v is Step =>
+  isRecord(v) && isText(v.id) && isText(v.text) && optional(v.section, isText) && optional(v.page, isCount) &&
+  optional(v.original, isText) && optional(v.note, isText)
+
+function copyStep({ id, text, section, page, original, note }: Step): Step {
+  return {
+    id, text,
+    ...(section !== undefined && { section }),
+    ...(page !== undefined && { page }),
+    ...(original !== undefined && { original }),
+    ...(note !== undefined && { note }),
+  }
+}
+
 
 const isUntil = (v: unknown): v is Until =>
   isRecord(v) &&

@@ -3,7 +3,7 @@
 Eine Web-App für iPad und iPhone, die Strickanleitungen einliest und Schritt für
 Schritt durch das Projekt führt.
 
-> **Status:** M3, Strickansicht mit Wiederholungen. Import folgt.
+> **Status:** M4, Import von PDF und Text. Import folgt.
 
 ## Ziel
 
@@ -18,11 +18,13 @@ Plan: [docs/PLAN.md](docs/PLAN.md), Technik:
 
 Projekte liegen nur im Browser des Geräts. Safari und die App auf dem
 Home-Bildschirm haben getrennte Daten. Regelmäßig „Sichern“ nutzen.
+Original-PDFs sind nicht in der Sicherung enthalten.
 
 ## Projektstruktur
 
 ```text
 src/core/         Fachlogik
+src/core/import/  Erkennung von Anleitungen
 src/data/         Speicherung (IndexedDB)
 src/components/   Oberfläche
 e2e/              Browser-Tests

@@ -2,9 +2,9 @@
 
 Strickapp ist eine Web-App (PWA) zum Stricken für iPad und iPhone. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: M3, Strickansicht
+## Aktuelle Phase: M4, Import
 
-M2 läuft auf dem iPad. M3 ist gebaut, Veröffentlichung und iPad-Test stehen aus.
+M3 ist veröffentlicht. M4 ist gebaut, Veröffentlichung und iPad-Test stehen aus.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
@@ -36,7 +36,9 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 ## Architektur
 
 - `src/core/`: Fachlogik als reine Funktionen, ohne React und Browser-Speicher.
-- `src/data/`: einziger Zugriff auf IndexedDB. Ändern immer in einer Transaktion.
+- `src/core/import/`: Anleitung erkennen. `lines` (Layout) → `parse` (Regeln) →
+  Prüfansicht → `build` (Projekt).
+- `src/data/`: einziger Zugriff auf IndexedDB und pdf.js. Ändern immer in einer Transaktion.
 - `src/components/`: Anzeige, bekommt Daten und Aktionen als Props.
 
 ## Code

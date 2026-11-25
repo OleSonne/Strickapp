@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { rangeLabel, roundLabel } from '../core/labels'
 import { advance, isFinished, repeatAt, type Project } from '../core/project'
 
-export function KnitView({ project }: { project: Project }) {
+export function KnitView({ project, onOriginal }: { project: Project; onOriginal: (page: number) => void }) {
+  const [showWording, setShowWording] = useState(false)
   const step = project.steps[project.completedCount]
   if (isFinished(project) || !step) {
     return (
@@ -17,13 +19,23 @@ export function KnitView({ project }: { project: Project }) {
   return (
     <section className="knit">
       <div aria-live="polite" aria-atomic="true">
-        <p className="position">Schritt {project.completedCount + 1} von {project.steps.length}</p>
+        <p className="position">{step.section && `${step.section} · `}Schritt {project.completedCount + 1} von {project.steps.length}</p>
         {repeat && (
           <p className="round">
             <strong>{roundLabel(project)}</strong> <span>({rangeLabel(project, repeat)})</span>
           </p>
         )}
         <p className="knit-text">{step.text}</p>
+      </div>
+      {step.note && <p className="warning">{step.note}</p>}
+      {showWording && step.original && <p className="next">Im Original: {step.original}</p>}
+      <div className="actions">
+        {step.original && (
+          <button aria-pressed={showWording} onClick={() => setShowWording(!showWording)}>Wortlaut</button>
+        )}
+        {step.page !== undefined && (
+          <button onClick={() => onOriginal(step.page!)}>Originalseite {step.page}</button>
+        )}
       </div>
       <p className="next">
         {again ? 'Danach wieder: ' : 'Danach: '}

@@ -1,6 +1,11 @@
 export interface Step {
   id: string
   text: string
+  /** Angaben aus dem Import. */
+  section?: string
+  page?: number
+  original?: string
+  note?: string
 }
 
 export type Until = { kind: 'count'; count: number } | { kind: 'condition'; text: string }

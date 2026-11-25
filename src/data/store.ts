@@ -1,14 +1,27 @@
 import { openDB, type DBSchema } from 'idb'
 import { upgrade, type Project, type StoredProject } from '../core/project'
 
+/** Originaldatei einer importierten Anleitung. */
+export interface Source {
+  name: string
+  data: ArrayBuffer
+}
+
 interface Schema extends DBSchema {
   projects: { key: string; value: StoredProject }
+  sources: { key: string; value: Source }
 }
 
 const open = () =>
-  openDB<Schema>('strickapp', 1, {
-    upgrade(db) {
-      db.createObjectStore('projects', { keyPath: 'id' })
+  openDB<Schema>('strickapp', 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) db.createObjectStore('projects', { keyPath: 'id' })
+      if (oldVersion < 2) db.createObjectStore('sources')
+    },
+    // Einer neueren Version in einem anderen Fenster nicht im Weg stehen.
+    blocking(_current, _blocked, event) {
+      ;(event.target as IDBDatabase).close()
+      connection = undefined
     },
   })
 
@@ -27,8 +40,17 @@ export async function loadProjects(): Promise<Project[]> {
   return all.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
-export async function addProject(project: Project): Promise<void> {
-  await (await db()).add('projects', project)
+export async function addProject(project: Project, source?: Source): Promise<void> {
+  const tx = (await db()).transaction(['projects', 'sources'], 'readwrite')
+  await Promise.all([
+    tx.objectStore('projects').add(project),
+    source && tx.objectStore('sources').put(source, project.id),
+    tx.done,
+  ])
+}
+
+export async function loadSource(projectId: string): Promise<Source | undefined> {
+  return (await db()).get('sources', projectId)
 }
 
 /** Lesen und Schreiben in einer Transaktion, damit kein Stand verloren geht. */
@@ -40,7 +62,8 @@ export async function updateProject(id: string, change: (p: Project) => Project)
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  await (await db()).delete('projects', id)
+  const tx = (await db()).transaction(['projects', 'sources'], 'readwrite')
+  await Promise.all([tx.objectStore('projects').delete(id), tx.objectStore('sources').delete(id), tx.done])
 }
 
 /** Ergänzt Projekte. Vorhandene werden nur durch neuere Stände ersetzt. */
