@@ -1,8 +1,8 @@
 import { openDB, type DBSchema } from 'idb'
-import type { Project } from '../core/project'
+import { upgrade, type Project, type StoredProject } from '../core/project'
 
 interface Schema extends DBSchema {
-  projects: { key: string; value: Project }
+  projects: { key: string; value: StoredProject }
 }
 
 const open = () =>
@@ -23,7 +23,7 @@ function db() {
 }
 
 export async function loadProjects(): Promise<Project[]> {
-  const all = await (await db()).getAll('projects')
+  const all = (await (await db()).getAll('projects')).map(upgrade)
   return all.sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
@@ -35,7 +35,7 @@ export async function addProject(project: Project): Promise<void> {
 export async function updateProject(id: string, change: (p: Project) => Project): Promise<void> {
   const tx = (await db()).transaction('projects', 'readwrite')
   const current = await tx.store.get(id)
-  if (current) await tx.store.put({ ...change(current), updatedAt: Date.now() })
+  if (current) await tx.store.put({ ...change(upgrade(current)), updatedAt: Date.now() })
   await tx.done
 }
 

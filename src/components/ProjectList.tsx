@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { isFinished, type Project } from '../core/project'
+import { isFinished, work, type Project } from '../core/project'
 
 interface Props {
   projects: Project[]
@@ -13,7 +13,7 @@ interface Props {
 function status(p: Project) {
   if (p.steps.length === 0) return 'Noch keine Schritte'
   if (isFinished(p)) return 'Fertig'
-  return `${p.completedCount} von ${p.steps.length} Schritten erledigt`
+  return `Schritt ${p.completedCount + 1} von ${p.steps.length}`
 }
 
 export function ProjectList({ projects, selectedId, onSelect, onCreate, onExport, onImport }: Props) {
@@ -34,7 +34,7 @@ export function ProjectList({ projects, selectedId, onSelect, onCreate, onExport
               onClick={() => onSelect(p.id)}
             >
               <strong>{p.name}</strong>
-              <progress value={p.completedCount} max={Math.max(p.steps.length, 1)} aria-hidden="true" />
+              <progress value={work(p).done} max={Math.max(work(p).total, 1)} aria-hidden="true" />
               <small>{status(p)}</small>
             </button>
           </li>

@@ -8,3 +8,4 @@
 - [x] T-005 (M1) Grundgerüst läuft auf dem iPad (2026-11-25)
 - [x] T-006 (M1) CI-Lauf auf GitHub erfolgreich (2026-11-25)
 - [x] T-007/T-008 (M2) Projekte und Speicherung als Web-App gebaut, iPad-Test: T-015 (2026-11-25)
+- [x] T-015 (M2) Web-App veröffentlicht, läuft auf dem iPad (2026-11-25)

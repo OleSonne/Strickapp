@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { ConfirmDialog, TextDialog, type ConfirmRequest, type TextRequest } from './components/Dialogs'
 import { ProjectDetail } from './components/ProjectDetail'
 import { ProjectList } from './components/ProjectList'
+import { RepeatDialog } from './components/RepeatDialog'
 import { parseBackup, toBackup } from './core/backup'
-import { addSteps, createProject, editStep, rename, splitSteps, type Project } from './core/project'
+import { addSteps, createProject, editStep, rename, saveRepeat, splitSteps, type Project, type Repeat } from './core/project'
 import * as store from './data/store'
 
 const idFromHash = () => location.hash.slice(1) || null
@@ -13,6 +14,7 @@ export function App() {
   const [selectedId, setSelectedId] = useState(idFromHash)
   const [textRequest, setTextRequest] = useState<TextRequest | null>(null)
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null)
+  const [repeatRequest, setRepeatRequest] = useState<{ repeat?: Repeat } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
   /** Führt eine Änderung aus und zeigt danach den gespeicherten Stand. */
@@ -114,6 +116,7 @@ export function App() {
               onSave: (text) => run(() => store.updateProject(selected.id, (p) => editStep(p, step.id, text))),
             })
           }
+          onEditRepeat={(repeat) => setRepeatRequest({ repeat })}
           onRename={() =>
             setTextRequest({
               title: 'Projekt umbenennen',
@@ -141,6 +144,24 @@ export function App() {
       )}
       {textRequest && <TextDialog request={textRequest} onClose={() => setTextRequest(null)} />}
       {confirmRequest && <ConfirmDialog request={confirmRequest} onClose={() => setConfirmRequest(null)} />}
+      {repeatRequest && selected && (
+        <RepeatDialog
+          project={selected}
+          repeat={repeatRequest.repeat}
+          onClose={() => setRepeatRequest(null)}
+          onSave={async (from, to, until) => {
+            const id = repeatRequest.repeat?.id
+            try {
+              // Eingaben vorab prüfen, damit der Hinweis im Dialog erscheint.
+              saveRepeat(selected, from, to, until, id)
+            } catch (error) {
+              return error instanceof Error ? error.message : String(error)
+            }
+            const ok = await run(() => store.updateProject(selected.id, (p) => saveRepeat(p, from, to, until, id)))
+            return ok ? null : 'Das wurde nicht gespeichert.'
+          }}
+        />
+      )}
       {message && (
         <div className="message" role="alert">
           <span>{message}</span>

@@ -1,3 +1,3 @@
 # In Arbeit
 
-- [ ] T-015 (M2) Web-App veröffentlichen und auf dem iPad bestätigen
+- [ ] T-009 (M3) Strickansicht mit Wiederholungen und Rückgängig: gebaut, iPad-Test offen

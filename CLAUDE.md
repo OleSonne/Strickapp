@@ -2,9 +2,9 @@
 
 Strickapp ist eine Web-App (PWA) zum Stricken für iPad und iPhone. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: M2, Projekte
+## Aktuelle Phase: M3, Strickansicht
 
-M2 ist als Web-App gebaut. Offen: Veröffentlichung und Test auf dem iPad.
+M2 läuft auf dem iPad. M3 ist gebaut, Veröffentlichung und iPad-Test stehen aus.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf

@@ -3,7 +3,7 @@
 Eine Web-App für iPad und iPhone, die Strickanleitungen einliest und Schritt für
 Schritt durch das Projekt führt.
 
-> **Status:** M2, Projekte und Schritte von Hand. Import folgt.
+> **Status:** M3, Strickansicht mit Wiederholungen. Import folgt.
 
 ## Ziel
 
