@@ -1,11 +1,14 @@
-# Anweisungen für Claude
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 Strickapp ist eine Web-App (PWA) zum Stricken für iPad und iPhone. Mit dem Nutzer auf Deutsch sprechen.
 
 ## Aktuelle Phase: M4, Nachbesserung
 
 M4 ist veröffentlicht. Tipps am Schritt und Strickschriften (T-022 bis T-024) sind
-gebaut, Veröffentlichung und iPad-Test stehen aus. Danach folgt M5.
+gebaut, dazu automatische Gittersuche und neue Reihenansicht (T-026). Veröffentlichung
+und iPad-Test stehen aus. Danach folgt M5.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf
@@ -25,7 +28,26 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 ## Umgebung
 
 - Kein Node auf dem Rechner: alle Befehle im Docker-Container, siehe README.
-- Das Playwright-Image muss dieselbe Version wie `@playwright/test` haben.
+
+```sh
+# Voranstellen; danach z. B. `strick npm test`
+strick() { docker run --rm --ipc=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD":/app -w /app mcr.microsoft.com/playwright:v1.65.1-noble "$@"; }
+
+strick npm ci
+strick npm test                                          # Vitest, src/**/*.test.ts
+strick npx vitest run src/core/core.test.ts -t "Name"    # einzelner Unit-Test
+strick npm run build                                     # Typprüfung (tsc) und Vite
+strick npm run e2e                                       # testet dist/, vorher bauen
+strick npx playwright test e2e/import.spec.ts --project=ipad -g "Name"
+```
+
+- Die Shell-Funktion gilt nur im selben Aufruf. Einen Linter gibt es nicht.
+- E2E-Projekte: `ipad` und `iphone` (WebKit), nur `offline.spec.ts` läuft in Chromium.
+- CI testet jeden Push und veröffentlicht `main` auf GitHub Pages (Basispfad
+  `/Strickapp/`). Ein Push auf `main` ist also eine Veröffentlichung.
+- Das Playwright-Image muss dieselbe Version wie `@playwright/test` haben,
+  auch in `.github/workflows/ci.yml`.
 - WebKit in Playwright ist nicht Safari. Auf dem iPad Ungeprüftes klar benennen.
 
 ## Technik (siehe docs/decisions/0002-web-app.md)
@@ -41,6 +63,26 @@ Diesen Abschnitt bei jedem Meilenstein aktualisieren.
   Prüfansicht → `build` (Projekt).
 - `src/data/`: einziger Zugriff auf IndexedDB und pdf.js. Ändern immer in einer Transaktion.
 - `src/components/`: Anzeige, bekommt Daten und Aktionen als Props.
+
+Datenfluss: `App.tsx` hält den Zustand. Komponenten melden Änderungen als Funktion
+`Project → Project` aus `core/project.ts`, `store.updateProject` wendet sie in einer
+Transaktion auf den gespeicherten Stand an, danach lädt `run` alles neu und zeigt Fehler.
+Das gewählte Projekt steht im URL-Hash.
+
+Regeln in `core/project.ts`, die leicht verletzt werden:
+
+- `completedCount` ist der Index des aktuellen Schritts, nicht ein Haken je Schritt.
+- Wiederholungen sind zusammenhängend und überlappen nie. Verschieben darf sie nicht zerreißen.
+- Weitergehen schreibt `history` (Rückgängig). Einfügen, Löschen und Verschieben laufen
+  über `withSteps`, das sie leert. Wiederholungen ändern leert sie ebenfalls. Nur
+  Anhängen (`addSteps`) und Textänderungen (`editStep`) lassen sie stehen.
+- Strickschrift-Reihen sind normale Schritte mit `step.chart`. Reihe 1 ist unten.
+
+Neue Felder an `Project` oder `Step`: auch `upgrade` (alte Daten) und Prüfung samt
+Kopie in `core/backup.ts` anpassen. Neue IndexedDB-Version: Test wie `e2e/upgrade.spec.ts`.
+
+Original-PDFs liegen in einem eigenen Store `sources` (Schlüssel: Projekt-ID) und
+fehlen in der Sicherung. Code muss mit fehlendem Original umgehen.
 
 ## Code
 
