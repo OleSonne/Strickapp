@@ -5,13 +5,16 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   // Pfad auf GitHub Pages
   base: '/Strickapp/',
+  define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')) },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Anmeldung in src/data/updates.ts
+      injectRegister: false,
       includeAssets: ['icon-180.png'],
       // pdf.js samt Worker muss auch offline da sein.
-      workbox: { globPatterns: ['**/*.{js,mjs,css,html,svg,png}'], maximumFileSizeToCacheInBytes: 4 * 1024 * 1024 },
+      workbox: { skipWaiting: true, clientsClaim: true, globPatterns: ['**/*.{js,mjs,css,html,svg,png}'], maximumFileSizeToCacheInBytes: 4 * 1024 * 1024 },
       manifest: {
         name: 'Strickapp',
         short_name: 'Strickapp',

@@ -137,6 +137,8 @@ mark.yarn { color: inherit; padding: 0 .2em; border-radius: 6px; background: var
 .yarn-a { --yarn: #b4532a; } .yarn-b { --yarn: #2563eb; } .yarn-c { --yarn: #15803d; } .yarn-d { --yarn: #9333ea; }
 .yarn-e, .yarn-f, .yarn-g, .yarn-h { --yarn: #808080; }
 
+.version { flex-basis: 100%; }
+
 @media (max-width: 700px) {
   .controls:has(.decision) { grid-template-columns: 1fr; }
 

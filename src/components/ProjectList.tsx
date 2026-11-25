@@ -59,6 +59,7 @@ export function ProjectList({ projects, selectedId, onSelect, onCreate, onImport
             if (chosen) onImport(chosen)
           }}
         />
+        <small className="version">Version {__BUILD__}</small>
       </footer>
     </nav>
   )

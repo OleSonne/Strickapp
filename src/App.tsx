@@ -7,6 +7,7 @@ import { ProjectList } from './components/ProjectList'
 import { RepeatDialog } from './components/RepeatDialog'
 import { parseBackup, toBackup } from './core/backup'
 import { addChart, addSteps, createProject, editStep, rename, saveRepeat, splitSteps, type Project, type Repeat, type Step } from './core/project'
+import { watchUpdates } from './data/updates'
 import * as store from './data/store'
 
 const idFromHash = () => location.hash.slice(1) || null
@@ -18,6 +19,7 @@ export function App() {
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null)
   const [repeatRequest, setRepeatRequest] = useState<{ repeat?: Repeat } | null>(null)
   const [chartStep, setChartStep] = useState<Step | null>(null)
+  const [updateReady, setUpdateReady] = useState(false)
   const [importing, setImporting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -49,6 +51,8 @@ export function App() {
       window.removeEventListener('hashchange', onHash)
     }
   }, [run])
+
+  useEffect(() => watchUpdates(() => setUpdateReady(true)), [])
 
   const select = (id: string | null) => {
     location.hash = id ?? ''
@@ -202,6 +206,12 @@ export function App() {
             return ok ? null : 'Das wurde nicht gespeichert.'
           }}
         />
+      )}
+      {updateReady && !message && (
+        <div className="message" role="status">
+          <span>Eine neue Version ist da.</span>
+          <button className="primary" onClick={() => location.reload()}>Neu laden</button>
+        </div>
       )}
       {message && (
         <div className="message" role="alert">

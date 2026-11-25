@@ -46,7 +46,7 @@ export function KnitView({ project, onOriginal, onChart }: {
         {step.original && (
           <button aria-pressed={showWording} onClick={() => setShowWording(!showWording)}>Wortlaut</button>
         )}
-        {step.note?.includes('Strickschrift') && step.page !== undefined && !step.chart && (
+        {step.page !== undefined && !step.chart && (
           <button onClick={onChart}>Strickschrift einrichten</button>
         )}
         {step.page !== undefined && (
