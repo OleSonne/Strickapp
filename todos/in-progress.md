@@ -1,3 +1,4 @@
 # In Arbeit
 
-- [ ] T-005 (M1) Grundgerüst angelegt, Start auf dem iPad bestätigen
+- [ ] T-007/T-008 (M2) Projekte, Schritte und Speicherung: geschrieben, Build und
+  iPad-Test stehen aus

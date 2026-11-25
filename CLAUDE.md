@@ -2,9 +2,9 @@
 
 Strickapp ist eine iOS-App zum Stricken. Mit dem Nutzer auf Deutsch sprechen.
 
-## Aktuelle Phase: M1, Grundgerüst
+## Aktuelle Phase: M2, Projekte
 
-Grundgerüst in `Strickapp.swiftpm`. Offen: Start auf dem iPad und CI bestätigen.
+M1 läuft auf dem iPad. M2 ist geschrieben, Build und iPad-Test stehen aus.
 Diesen Abschnitt bei jedem Meilenstein aktualisieren.
 
 ## Arbeitsablauf

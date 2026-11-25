@@ -3,7 +3,7 @@
 Eine iOS-App, die Strickanleitungen einliest und Schritt für Schritt durch das
 Projekt führt.
 
-> **Status:** Grundgerüst.
+> **Status:** M2, Projekte und Schritte von Hand.
 
 ## Ziel
 
@@ -31,7 +31,10 @@ Begründung: [docs/decisions/0001-technik.md](docs/decisions/0001-technik.md)
 Strickapp.swiftpm/    App für Swift Playground und Xcode
 ├── App/              Einstiegspunkt, Navigation
 ├── Core/             Fachlogik ohne SwiftUI, unter Linux testbar
-└── Features/         Ein Ordner pro Funktion
+├── DesignSystem/     Wiederverwendbare Views
+├── Features/         Ein Ordner pro Funktion
+├── Models/           SwiftData-Modelle
+└── Services/         Speicherung
 Package.swift         Nur für Tests der Fachlogik
 Tests/                Unit-Tests
 docs/                 Plan und Entscheidungen
