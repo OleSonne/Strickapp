@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcresult
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Secrets und Signierung
+.env
+.env.*
+Secrets.xcconfig
+*.p8
+*.p12
+*.mobileprovision
+
+# Claude Code, lokale Einstellungen
+.claude/settings.local.json
